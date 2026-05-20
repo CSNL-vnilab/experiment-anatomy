@@ -1,0 +1,26 @@
+# Researcher-local outputs from running /analyze in this directory
+experiment-spec.json
+experiment-spec-summary.md
+*.review.json
+
+# Interview audit logs (local cache; see prompts/interview.md)
+.experiment-anatomy/
+
+# Python venv / caches for the upserter
+.venv/
+__pycache__/
+*.pyc
+
+# Environment secrets — never commit
+.env
+.env.local
+
+# Editor / OS noise
+.DS_Store
+.vscode/
+.idea/
+
+# Temporary
+tmp/
+*.tmp
+INIT_COMMIT_MSG.txt

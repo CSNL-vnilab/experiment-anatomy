@@ -1,0 +1,328 @@
+{
+  "schema_version": "1.0.0",
+  "identity": {
+    "title": "Time-reproduction (Time2Dist) — Exp2",
+    "short_id": "TimeExp2",
+    "version": null,
+    "summary": "Multi-session time-reproduction paradigm. Participants observe a moving stimulus, an occlusion period of variable duration, and reproduce the perceived duration via a key-press or click response. Exp2 differs from Exp1 in the stimulus distribution (between-subject) and adds a per-trial confidence rating.",
+    "research_question": "Whether prior shape of the duration distribution (uniform vs. bimodal) systematically biases temporal reproduction across days, and whether confidence tracks bias magnitude.",
+    "paradigm_genre": "estimation"
+  },
+  "platform": {
+    "framework": "psychtoolbox",
+    "language": "matlab",
+    "framework_version": "PTB 3.0.18",
+    "language_runtime": "MATLAB R2023b",
+    "external_dependencies": [
+      { "name": "Psychtoolbox", "version": "3.0.18", "pinned": true },
+      { "name": "Datapixx", "version": null, "pinned": false }
+    ],
+    "detection_confidence": 0.99
+  },
+  "hierarchy": {
+    "one_liner": "session: par.day 1..5 (within_subject); block: for iR=1:nBlocks (Day1=10 train, Day2-5=12 test); trial: for iT=1:nT (40); total ≈ 5 × ~11 × 40 = 2200",
+    "n_sessions": 5,
+    "sessions": [
+      {
+        "index": 1,
+        "label": "Day 1 — training",
+        "day_range": "1",
+        "phases": [
+          {
+            "kind": "training",
+            "label": "uniform-prior training",
+            "n_blocks": 10,
+            "n_trials_per_block": 40,
+            "applies_when": "par.day == 1",
+            "description": "10 blocks of uniform-prior training; feedback after every trial."
+          }
+        ]
+      },
+      {
+        "index": 2,
+        "label": "Day 2-5 — test",
+        "day_range": "2-5",
+        "phases": [
+          {
+            "kind": "test",
+            "label": "test (between-subject dist)",
+            "n_blocks": 12,
+            "n_trials_per_block": 40,
+            "applies_when": "par.day > 1",
+            "description": "12 blocks; dist (A or B) assigned per-subject via mod(subjNum,2)."
+          }
+        ]
+      }
+    ],
+    "total_trials_estimate": 2200,
+    "estimated_duration_min": 90
+  },
+  "factors": [
+    {
+      "name": "dist",
+      "display_name": "stimulus distribution",
+      "type": "categorical",
+      "levels": ["A", "B"],
+      "level_source": "inline-literal",
+      "role": "between_subject",
+      "description": "Between-subject distribution of stimulus durations. Assigned via mod(subjNum, 2).",
+      "evidence": ["Exp2/sub/exp_info_Exp2.m:31"]
+    },
+    {
+      "name": "day",
+      "type": "ordinal",
+      "levels": [1, 2, 3, 4, 5],
+      "level_source": "inline-literal",
+      "role": "within_subject",
+      "description": "Session day. Day 1 = training-only, Day 2-5 = test.",
+      "evidence": ["Exp2/main_duration.m:24"]
+    },
+    {
+      "name": "stim_duration",
+      "type": "continuous",
+      "levels": [],
+      "level_source": "rng-sampled",
+      "role": "per_trial",
+      "description": "Per-trial target stimulus duration drawn from dist on each trial.",
+      "evidence": ["Exp2/sub/Seed_Duration.m:18"]
+    }
+  ],
+  "conditions": [
+    {
+      "label": "training",
+      "factor_assignments": { "day": "1", "dist": "U" },
+      "description": "Uniform-prior training on Day 1, all subjects."
+    },
+    {
+      "label": "test-A",
+      "factor_assignments": { "day": "2-5", "dist": "A" },
+      "description": "Even-subjNum subjects, Days 2-5."
+    },
+    {
+      "label": "test-B",
+      "factor_assignments": { "day": "2-5", "dist": "B" },
+      "description": "Odd-subjNum subjects, Days 2-5."
+    }
+  ],
+  "design_matrix_summary": "Between-subject: dist ∈ {A, B} assigned by mod(subjNum, 2). Within-subject longitudinal: day 1..5 (training day 1, test days 2-5).",
+  "parameters": [
+    {
+      "name": "nT",
+      "value": 40,
+      "type": "number",
+      "unit": "trials",
+      "shape": "constant",
+      "description": "Trials per block.",
+      "evidence": ["Exp2/sub/param_TrialRunTime_Duration.m:5"]
+    },
+    {
+      "name": "tprecue",
+      "value": 0.3,
+      "type": "number",
+      "unit": "sec",
+      "shape": "constant",
+      "description": "Pre-cue interval before the moving stimulus appears.",
+      "evidence": ["Exp2/sub/param_TrialRunTime_Duration.m:12"]
+    }
+  ],
+  "saved_variables": [
+    {
+      "name": "Stm",
+      "scale": "per_trial",
+      "category": "stimulus",
+      "format": "float",
+      "unit": "sec",
+      "sink": "results.mat:par.results.Stm{iR}(iT)",
+      "description": "Target stimulus duration on each trial.",
+      "evidence": ["Exp2/main_duration.m:88"]
+    },
+    {
+      "name": "Est",
+      "scale": "per_trial",
+      "category": "response",
+      "format": "float",
+      "unit": "sec",
+      "sink": "results.mat:par.results.Est{iR}(iT)",
+      "description": "Subject's reproduced duration estimate.",
+      "evidence": ["Exp2/main_duration.m:142"]
+    },
+    {
+      "name": "Confidence",
+      "scale": "per_trial",
+      "category": "response",
+      "format": "int",
+      "unit": "rating 1-7",
+      "sink": "results.mat:par.results.Confidence{iR}(iT)",
+      "description": "Per-trial confidence rating (Exp2-only).",
+      "evidence": ["Exp2/main_duration.m:158"]
+    },
+    {
+      "name": "tp.vbl_start",
+      "scale": "per_trial",
+      "category": "timing",
+      "format": "float",
+      "unit": "sec (GetSecs)",
+      "sink": "results.mat:par.tp.vbl_start{iR}(iT)",
+      "description": "VBL timestamp at trial start.",
+      "evidence": ["Exp2/sub/Duration_Occlusion.m:311"]
+    },
+    {
+      "name": "subID",
+      "scale": "per_session",
+      "category": "session_meta",
+      "format": "string",
+      "unit": null,
+      "sink": "results.mat:finalState.subID",
+      "description": "Subject identifier.",
+      "evidence": ["Exp2/sub/exp_info_Exp2.m:8"]
+    }
+  ],
+  "display": {
+    "stimulus_outputs": [
+      {
+        "kind": "draw",
+        "name": "Screen('DrawTexture')",
+        "drives": ["stim_duration", "dist"],
+        "evidence": ["Exp2/sub/Duration_Occlusion.m:201"]
+      },
+      {
+        "kind": "flip",
+        "name": "Screen('Flip')",
+        "drives": [],
+        "evidence": ["Exp2/sub/Duration_Occlusion.m:230"]
+      }
+    ],
+    "figure_outputs": [
+      {
+        "sink": "figures/<subID>_day<N>_estimate-vs-stim.png",
+        "what": "Per-day scatter of reproduction vs. target duration with regression line.",
+        "evidence": ["Exp2/sub/save_dayreport.m:42"]
+      }
+    ]
+  },
+  "storage": {
+    "data_paths": [
+      {
+        "path": "/Volumes/CSNL_new-1/people/JOP/Magnitude/Experiment/Time2Dist/Exp2/results/<subID>_day<N>.mat",
+        "kind": "per_session_log",
+        "format_hint": "MATLAB .mat with par.results struct"
+      },
+      {
+        "path": "/Volumes/CSNL_new-1/people/JOP/Magnitude/Experiment/Time2Dist/Exp2/results/run-wise-backup/results_<subID>_day<N>_block<iR>.mat",
+        "kind": "per_block_log",
+        "format_hint": "blockState struct"
+      }
+    ],
+    "backup_paths": [
+      "/Volumes/CSNL_new-1/people/JOP/Magnitude/Experiment/Time2Dist/Exp2/results/codebackup.zip"
+    ],
+    "naming_convention": "<subID>_day<N>.mat for session logs; results_<subID>_day<N>_block<iR>.mat for per-block backups."
+  },
+  "reproducibility": {
+    "seed": {
+      "pinned": true,
+      "source": "subjNum * day",
+      "scope": "per_session",
+      "evidence": "Exp2/main_duration.m:18"
+    },
+    "randomization": {
+      "scheme": "fixed_schedule",
+      "description": "Per-subject schedule generated at recruitment and saved into trial_schedule.mat; replayed deterministically."
+    },
+    "version_pinning": {
+      "total": 2,
+      "pinned": 1,
+      "lockfile_present": false
+    },
+    "environment_capture": {
+      "files_found": [],
+      "completeness": "absent"
+    },
+    "score": {
+      "overall": 53,
+      "components": {
+        "seed": 25,
+        "randomization": 15,
+        "version_pinning": 12,
+        "env_capture": 0,
+        "deterministic_paths": 12
+      },
+      "notes": "Strong seed + randomization scheme; no environment capture file. Adding a setup_environment.m documenting PTB build + MATLAB version would bring env_capture to partial."
+    }
+  },
+  "rigor": {
+    "counterbalancing": {
+      "present": true,
+      "scheme": "Between-subject dist assigned by mod(subjNum, 2); balanced across recruited cohort.",
+      "evidence": "docs/01_experiment_design.md §3"
+    },
+    "sample_size_justification": {
+      "present": true,
+      "method": "precedent",
+      "evidence": "docs/01_experiment_design.md §5 cites N=20 per dist (precedent Jazayeri & Shadlen 2010)"
+    },
+    "blinding": {
+      "applicable": false,
+      "experimenter_blind": null,
+      "participant_blind": null,
+      "note": "Within-subject longitudinal estimation paradigm; blinding not meaningful."
+    },
+    "preregistration_marker": {
+      "present": false,
+      "url_or_id": null
+    },
+    "exclusion_rules": {
+      "rules_found": [
+        "RT cutoff: Est outside [0.1, 3.0] sec → trial excluded",
+        "Block accuracy < 30% → block flagged in QC report"
+      ]
+    },
+    "checks": {
+      "every_factor_has_role": true,
+      "no_single_value_factor": true,
+      "saved_5_categories_present": true,
+      "hierarchy_complete": true,
+      "no_dead_branches_in_conditions": true
+    },
+    "score": {
+      "overall": 78,
+      "notes": "Strong on counterbalancing + precedent-based N + exclusion rules. -10 for no pre-registration; -7 for sample-size being precedent rather than power-analysis."
+    }
+  },
+  "open_questions": [
+    {
+      "topic": "saved_variables",
+      "question": "Is the Confidence rating Exp2-only, or was it back-ported into Exp1 in a later session?",
+      "evidence": "Exp2/main_duration.m:158 — present here; Exp1/main_duration.m has no Confidence channel",
+      "options": [
+        "Exp2-only — Exp1 stays without",
+        "Back-ported to Exp1 — please point me to the file/line",
+        "Not sure"
+      ]
+    }
+  ],
+  "provenance": {
+    "plugin_version": "0.1.0",
+    "schema_version": "1.0.0",
+    "analyzed_at": "2026-05-20T18:30:00Z",
+    "model": "claude-opus-4-7",
+    "passes_run": [
+      "survey",
+      "platform-and-identity",
+      "hierarchy",
+      "factors",
+      "conditions",
+      "parameters",
+      "saved-variables",
+      "display",
+      "storage",
+      "reproducibility",
+      "rigor",
+      "interview-1"
+    ],
+    "source_root": "/Volumes/CSNL_new-1/people/JOP/Magnitude/Experiment/Time2Dist/Exp2",
+    "bytes_analyzed": 67994,
+    "files_analyzed": 28,
+    "researcher_initial": "JOP"
+  }
+}

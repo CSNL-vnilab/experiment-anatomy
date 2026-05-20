@@ -1,0 +1,17 @@
+{
+  "name": "experiment-anatomy-marketplace",
+  "owner": {
+    "name": "CSNL Lab",
+    "url": "https://github.com/CSNL-vnilab"
+  },
+  "plugins": [
+    {
+      "name": "experiment-anatomy",
+      "source": ".",
+      "description": "Opus-driven structured deconstruction of an experiment codebase, emits PostgreSQL-feedable JSON. Works on any platform / paradigm / session count.",
+      "version": "0.1.0",
+      "category": "research",
+      "tags": ["research", "experiment", "review", "postgres"]
+    }
+  ]
+}

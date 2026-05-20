@@ -1,0 +1,623 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/CSNL-vnilab/experiment-anatomy/schemas/experiment-spec.schema.json",
+  "title": "Experiment Spec — platform-/paradigm-/session-count-agnostic deconstruction",
+  "description": "Output of the experiment-anatomy plugin. One self-contained row per experiment codebase. Every field is filled the same way regardless of whether the source is Psychtoolbox/MATLAB, PsychoPy, jsPsych, lab.js, or a custom loop, and regardless of session count or paradigm. Designed to round-trip into a PostgreSQL `experiment_specs` table (see schemas/postgres-mapping.md).",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "identity",
+    "platform",
+    "hierarchy",
+    "factors",
+    "conditions",
+    "parameters",
+    "saved_variables",
+    "display",
+    "storage",
+    "reproducibility",
+    "rigor",
+    "open_questions",
+    "provenance"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0",
+      "description": "Bump on breaking changes. Consumers (e.g. PostgreSQL upserter) gate on this."
+    },
+
+    "identity": {
+      "type": "object",
+      "required": ["title", "summary"],
+      "properties": {
+        "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "short_id": {
+          "type": ["string", "null"],
+          "description": "Stable researcher-chosen slug (e.g. 'TimeExp2'). Used as the natural key for upsert."
+        },
+        "version": {
+          "type": ["string", "null"],
+          "description": "Researcher version label or git short SHA the analysis was run against."
+        },
+        "summary": {
+          "type": "string",
+          "description": "Two-to-four sentence plain-language description of the paradigm and what the experiment measures. Written by the anatomist; the researcher confirms.",
+          "minLength": 1,
+          "maxLength": 4000
+        },
+        "research_question": {
+          "type": ["string", "null"],
+          "description": "If discoverable from README/docs — the hypothesis or main DV the design targets."
+        },
+        "paradigm_genre": {
+          "type": "string",
+          "enum": [
+            "psychophysics",
+            "estimation",
+            "decision",
+            "retrieval",
+            "search",
+            "perception",
+            "memory",
+            "motor",
+            "categorization",
+            "attention",
+            "imagery",
+            "language",
+            "social",
+            "gamified",
+            "other"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "platform": {
+      "type": "object",
+      "required": ["framework", "language", "detection_confidence"],
+      "description": "How the experiment is implemented. Confidence is the anatomist's own — a value <0.7 should be confirmed via interview.",
+      "properties": {
+        "framework": {
+          "type": "string",
+          "enum": [
+            "psychtoolbox",
+            "psychopy",
+            "jspsych",
+            "lab.js",
+            "opensesame",
+            "neurobs-presentation",
+            "custom",
+            "mixed",
+            "unknown"
+          ]
+        },
+        "language": {
+          "type": "string",
+          "enum": ["matlab", "python", "javascript", "typescript", "r", "c", "cpp", "other"]
+        },
+        "framework_version": { "type": ["string", "null"] },
+        "language_runtime": {
+          "type": ["string", "null"],
+          "description": "e.g. 'MATLAB R2023b', 'Python 3.11', 'Node 22'"
+        },
+        "external_dependencies": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "object",
+            "required": ["name", "pinned"],
+            "properties": {
+              "name": { "type": "string", "maxLength": 200 },
+              "version": { "type": ["string", "null"] },
+              "pinned": { "type": "boolean" }
+            },
+            "additionalProperties": false
+          },
+          "description": "Used for the reproducibility score. requirements.txt / package.json / .lock / Manifest.toml etc."
+        },
+        "detection_confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+      },
+      "additionalProperties": false
+    },
+
+    "hierarchy": {
+      "type": "object",
+      "description": "The experiment→session→run/block→trial nesting. Single-session experiments simply have sessions[0].",
+      "required": ["one_liner", "sessions"],
+      "properties": {
+        "one_liner": {
+          "type": "string",
+          "description": "Single-line description: loop variables + counts + index mapping at each level. E.g. 'session: par.day 1..5 (within_subject); block: for iR=1:nBlocks (Day1=10/Day2-5=12); trial: for iT=1:nT (40)'.",
+          "maxLength": 1000
+        },
+        "n_sessions": { "type": ["integer", "null"], "minimum": 1, "maximum": 1000 },
+        "sessions": {
+          "type": "array",
+          "maxItems": 50,
+          "items": {
+            "type": "object",
+            "required": ["index", "phases"],
+            "properties": {
+              "index": { "type": "integer", "minimum": 1 },
+              "label": { "type": ["string", "null"], "maxLength": 200 },
+              "day_range": { "type": ["string", "null"], "maxLength": 50, "description": "'1', '2-5', '1,3,5' …" },
+              "phases": {
+                "type": "array",
+                "maxItems": 30,
+                "items": {
+                  "type": "object",
+                  "required": ["kind", "n_blocks", "n_trials_per_block"],
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "enum": ["training", "practice", "stair", "main", "test", "transfer", "rest", "demo", "other"]
+                    },
+                    "label": { "type": ["string", "null"], "maxLength": 200 },
+                    "n_blocks": { "type": ["integer", "null"], "minimum": 0, "maximum": 10000 },
+                    "n_trials_per_block": { "type": ["integer", "null"], "minimum": 0, "maximum": 100000 },
+                    "applies_when": { "type": ["string", "null"], "maxLength": 500 },
+                    "description": { "type": ["string", "null"], "maxLength": 2000 }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "total_trials_estimate": { "type": ["integer", "null"], "minimum": 0, "maximum": 100000000 },
+        "estimated_duration_min": { "type": ["number", "null"], "minimum": 0, "maximum": 100000 }
+      },
+      "additionalProperties": false
+    },
+
+    "factors": {
+      "type": "array",
+      "maxItems": 100,
+      "description": "Manipulated variables (IVs). EVERY factor carries `role` — the level at which it varies. role=derived means it is NOT an IV (kept as a marker so the researcher can confirm-and-drop).",
+      "items": {
+        "type": "object",
+        "required": ["name", "type", "role"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "maxLength": 100 },
+          "display_name": { "type": ["string", "null"], "maxLength": 200 },
+          "type": { "type": "string", "enum": ["categorical", "continuous", "ordinal"] },
+          "levels": {
+            "type": "array",
+            "maxItems": 200,
+            "items": { "type": ["string", "number"], "maxLength": 200 }
+          },
+          "level_source": {
+            "type": "string",
+            "enum": ["inline-literal", "conditions-file", "rng-sampled", "adaptive", "inferred", "unknown"]
+          },
+          "role": {
+            "type": "string",
+            "enum": ["between_subject", "within_subject", "within_session", "per_trial", "derived", "unknown"]
+          },
+          "description": { "type": ["string", "null"], "maxLength": 4000 },
+          "evidence": {
+            "type": "array",
+            "maxItems": 10,
+            "items": { "type": "string", "maxLength": 500 },
+            "description": "Line-grounded references — 'path/file.ext:line' or a short quoted snippet."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+
+    "conditions": {
+      "type": "array",
+      "maxItems": 500,
+      "description": "Factor-level combinations the code actually executes (NO Cartesian explosion). Counterbalancing schemes go into `design_matrix_summary` below.",
+      "items": {
+        "type": "object",
+        "required": ["label", "factor_assignments"],
+        "properties": {
+          "label": { "type": "string", "minLength": 1, "maxLength": 100 },
+          "factor_assignments": {
+            "type": "object",
+            "patternProperties": {
+              "^[A-Za-z_][A-Za-z0-9_.-]*$": { "type": ["string", "number"], "maxLength": 200 }
+            },
+            "additionalProperties": false,
+            "maxProperties": 30
+          },
+          "description": { "type": ["string", "null"], "maxLength": 2000 }
+        },
+        "additionalProperties": false
+      }
+    },
+
+    "design_matrix_summary": {
+      "type": ["string", "null"],
+      "maxLength": 4000,
+      "description": "Free-form description of counterbalancing / Latin-square / between-subject assignment schemes that conditions[] alone can't express. E.g. 'subjNum mod 4 → AABB / ABBA / BABA / BBAA across days'."
+    },
+
+    "parameters": {
+      "type": "array",
+      "maxItems": 200,
+      "description": "Setup constants fixed across trials within their scope. shape distinguishes constant from per-block vector from runtime-input.",
+      "items": {
+        "type": "object",
+        "required": ["name", "shape"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "maxLength": 100 },
+          "value": { "type": ["string", "number", "boolean", "null"] },
+          "type": { "type": "string", "enum": ["number", "string", "boolean", "array", "object", "other"] },
+          "unit": { "type": ["string", "null"], "maxLength": 50 },
+          "shape": {
+            "type": "string",
+            "enum": ["constant", "vector", "expression", "input", "unknown"]
+          },
+          "description": { "type": ["string", "null"], "maxLength": 2000 },
+          "evidence": {
+            "type": "array",
+            "maxItems": 5,
+            "items": { "type": "string", "maxLength": 500 }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+
+    "saved_variables": {
+      "type": "array",
+      "maxItems": 300,
+      "description": "Output data the experiment writes. Tagged with the timescale (per_trial / per_block / per_session / per_subject) and the sink (file/column).",
+      "items": {
+        "type": "object",
+        "required": ["name", "scale", "format"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "maxLength": 100 },
+          "scale": {
+            "type": "string",
+            "enum": ["per_trial", "per_block", "per_session", "per_subject", "global"]
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "stimulus",
+              "response",
+              "timing",
+              "kinematics",
+              "block_summary",
+              "session_meta",
+              "subject_meta",
+              "rng_state",
+              "other"
+            ]
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "int", "float", "string", "bool", "array", "matrix", "struct",
+              "csv-row", "json", "image", "binary", "other"
+            ]
+          },
+          "unit": { "type": ["string", "null"], "maxLength": 50 },
+          "sink": {
+            "type": ["string", "null"],
+            "maxLength": 300,
+            "description": "Where it lands — file path, column name, DB sink."
+          },
+          "description": { "type": ["string", "null"], "maxLength": 2000 },
+          "evidence": {
+            "type": "array",
+            "maxItems": 5,
+            "items": { "type": "string", "maxLength": 500 }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+
+    "display": {
+      "type": "object",
+      "description": "Visualization side of the experiment — what is shown to the participant AND what figures the code outputs for the experimenter.",
+      "required": ["stimulus_outputs", "figure_outputs"],
+      "properties": {
+        "stimulus_outputs": {
+          "type": "array",
+          "maxItems": 50,
+          "description": "Calls that put something on the participant's screen (DrawTexture/Flip, visual.Window draw, jsPsych plugins, …).",
+          "items": {
+            "type": "object",
+            "required": ["kind", "name"],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": ["draw", "flip", "fixation", "feedback", "stimulus", "instruction", "other"]
+              },
+              "name": { "type": "string", "maxLength": 200 },
+              "drives": {
+                "type": "array",
+                "maxItems": 10,
+                "items": { "type": "string", "maxLength": 100 },
+                "description": "Parameter/factor names that decide what is drawn."
+              },
+              "evidence": {
+                "type": "array",
+                "maxItems": 3,
+                "items": { "type": "string", "maxLength": 500 }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "figure_outputs": {
+          "type": "array",
+          "maxItems": 30,
+          "description": "Plots/figures the code saves for the experimenter (saveas, savefig, print, plt.savefig, R ggsave, …).",
+          "items": {
+            "type": "object",
+            "required": ["sink"],
+            "properties": {
+              "sink": { "type": "string", "maxLength": 300 },
+              "what": { "type": ["string", "null"], "maxLength": 500 },
+              "evidence": {
+                "type": "array",
+                "maxItems": 3,
+                "items": { "type": "string", "maxLength": 500 }
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "storage": {
+      "type": "object",
+      "description": "Where data goes after collection. Paths are recorded verbatim; the anatomist does NOT resolve them.",
+      "required": ["data_paths", "backup_paths"],
+      "properties": {
+        "data_paths": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+              "path": { "type": "string", "maxLength": 1000 },
+              "kind": {
+                "type": "string",
+                "enum": ["per_trial_log", "per_block_log", "per_session_log", "raw_signal", "stimulus_assets", "config", "other"]
+              },
+              "format_hint": { "type": ["string", "null"], "maxLength": 100 }
+            },
+            "additionalProperties": false
+          }
+        },
+        "backup_paths": {
+          "type": "array",
+          "maxItems": 10,
+          "items": { "type": "string", "maxLength": 1000 }
+        },
+        "naming_convention": {
+          "type": ["string", "null"],
+          "maxLength": 1000,
+          "description": "How files are named — e.g. '<subID>_<day>_<expType>.mat' — including the date/time pattern if any."
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "reproducibility": {
+      "type": "object",
+      "description": "Concrete, code-grounded answers to 'could a stranger re-run this experiment and get the same numbers'.",
+      "required": ["seed", "randomization", "score"],
+      "properties": {
+        "seed": {
+          "type": "object",
+          "required": ["pinned"],
+          "properties": {
+            "pinned": { "type": "boolean" },
+            "source": {
+              "type": ["string", "null"],
+              "maxLength": 200,
+              "description": "Where the seed comes from — e.g. 'subjNum', 'os.time', 'constant 42', 'unset'."
+            },
+            "scope": {
+              "type": "string",
+              "enum": ["per_subject", "per_session", "per_block", "per_trial", "global", "unset", "unknown"]
+            },
+            "evidence": { "type": ["string", "null"], "maxLength": 500 }
+          },
+          "additionalProperties": false
+        },
+        "randomization": {
+          "type": "object",
+          "required": ["scheme"],
+          "properties": {
+            "scheme": {
+              "type": "string",
+              "enum": ["fixed_schedule", "block_shuffle", "trial_shuffle", "latin_square", "counterbalanced", "adaptive", "ad_hoc", "none", "unknown"]
+            },
+            "description": { "type": ["string", "null"], "maxLength": 1000 }
+          },
+          "additionalProperties": false
+        },
+        "version_pinning": {
+          "type": "object",
+          "description": "How many dependencies are version-pinned. Filled from platform.external_dependencies.",
+          "properties": {
+            "total": { "type": "integer", "minimum": 0 },
+            "pinned": { "type": "integer", "minimum": 0 },
+            "lockfile_present": { "type": "boolean" }
+          },
+          "additionalProperties": false
+        },
+        "environment_capture": {
+          "type": "object",
+          "description": "Whether the runtime environment is captured (requirements.txt / environment.yml / package-lock / renv.lock / Manifest.toml / Dockerfile / nix).",
+          "properties": {
+            "files_found": {
+              "type": "array",
+              "maxItems": 20,
+              "items": { "type": "string", "maxLength": 200 }
+            },
+            "completeness": { "type": "string", "enum": ["full", "partial", "absent"] }
+          },
+          "additionalProperties": false
+        },
+        "score": {
+          "type": "object",
+          "required": ["overall", "components"],
+          "description": "0–100. Components: seed (25), randomization-declared (15), version-pinning (25), env-capture (20), data-path-deterministic (15).",
+          "properties": {
+            "overall": { "type": "integer", "minimum": 0, "maximum": 100 },
+            "components": {
+              "type": "object",
+              "properties": {
+                "seed": { "type": "integer", "minimum": 0, "maximum": 25 },
+                "randomization": { "type": "integer", "minimum": 0, "maximum": 15 },
+                "version_pinning": { "type": "integer", "minimum": 0, "maximum": 25 },
+                "env_capture": { "type": "integer", "minimum": 0, "maximum": 20 },
+                "deterministic_paths": { "type": "integer", "minimum": 0, "maximum": 15 }
+              },
+              "additionalProperties": false
+            },
+            "notes": { "type": ["string", "null"], "maxLength": 2000 }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "rigor": {
+      "type": "object",
+      "description": "Methodological rigor signals visible from the code. NOT a verdict — a checklist with evidence so a reviewer can judge.",
+      "required": ["score", "checks"],
+      "properties": {
+        "counterbalancing": {
+          "type": "object",
+          "properties": {
+            "present": { "type": "boolean" },
+            "scheme": { "type": ["string", "null"], "maxLength": 500 },
+            "evidence": { "type": ["string", "null"], "maxLength": 500 }
+          },
+          "additionalProperties": false
+        },
+        "sample_size_justification": {
+          "type": "object",
+          "properties": {
+            "present": { "type": "boolean" },
+            "method": { "type": ["string", "null"], "enum": [null, "power_analysis", "precedent", "ad_hoc", "unstated", "other"] },
+            "evidence": { "type": ["string", "null"], "maxLength": 500 }
+          },
+          "additionalProperties": false
+        },
+        "blinding": {
+          "type": "object",
+          "properties": {
+            "applicable": { "type": "boolean" },
+            "experimenter_blind": { "type": ["boolean", "null"] },
+            "participant_blind": { "type": ["boolean", "null"] },
+            "note": { "type": ["string", "null"], "maxLength": 500 }
+          },
+          "additionalProperties": false
+        },
+        "preregistration_marker": {
+          "type": "object",
+          "properties": {
+            "present": { "type": "boolean" },
+            "url_or_id": { "type": ["string", "null"], "maxLength": 500 }
+          },
+          "additionalProperties": false
+        },
+        "exclusion_rules": {
+          "type": "object",
+          "description": "Anything in the code that drops trials/subjects (RT cutoff, missing response, accuracy floor).",
+          "properties": {
+            "rules_found": {
+              "type": "array",
+              "maxItems": 30,
+              "items": { "type": "string", "maxLength": 300 }
+            }
+          },
+          "additionalProperties": false
+        },
+        "checks": {
+          "type": "object",
+          "description": "Boolean flags for static checks the anatomist runs. Each is grounded in evidence in the corresponding section.",
+          "properties": {
+            "every_factor_has_role": { "type": "boolean" },
+            "no_single_value_factor": { "type": "boolean" },
+            "saved_5_categories_present": { "type": "boolean" },
+            "hierarchy_complete": { "type": "boolean" },
+            "no_dead_branches_in_conditions": { "type": "boolean" }
+          },
+          "additionalProperties": false
+        },
+        "score": {
+          "type": "object",
+          "required": ["overall"],
+          "description": "0–100. counterbalancing (25), sample-size-justification (20), blinding-where-applicable (15), preregistration (10), exclusion-rules-declared (15), checks-pass (15).",
+          "properties": {
+            "overall": { "type": "integer", "minimum": 0, "maximum": 100 },
+            "notes": { "type": ["string", "null"], "maxLength": 2000 }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "open_questions": {
+      "type": "array",
+      "maxItems": 50,
+      "description": "Things the anatomist could not determine from code/docs alone and would have asked the researcher in interview. PostgreSQL consumers can render these as a confirmation queue.",
+      "items": {
+        "type": "object",
+        "required": ["topic", "question"],
+        "properties": {
+          "topic": {
+            "type": "string",
+            "enum": ["identity", "platform", "hierarchy", "factors", "conditions", "parameters", "saved_variables", "display", "storage", "reproducibility", "rigor"]
+          },
+          "question": { "type": "string", "minLength": 1, "maxLength": 1000 },
+          "evidence": { "type": ["string", "null"], "maxLength": 500 },
+          "options": {
+            "type": "array",
+            "maxItems": 10,
+            "items": { "type": "string", "maxLength": 300 }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+
+    "provenance": {
+      "type": "object",
+      "required": ["plugin_version", "schema_version", "analyzed_at"],
+      "properties": {
+        "plugin_version": { "type": "string", "maxLength": 50 },
+        "schema_version": { "type": "string", "maxLength": 50 },
+        "analyzed_at": { "type": "string", "format": "date-time" },
+        "model": { "type": ["string", "null"], "maxLength": 100, "description": "e.g. 'claude-opus-4-7'" },
+        "passes_run": {
+          "type": "array",
+          "maxItems": 20,
+          "items": { "type": "string", "maxLength": 100 },
+          "description": "Ordered list of pass names the harness ran ('structure', 'factors', 'conditions', 'saved', 'display', 'reproducibility', 'rigor', 'interview-1', …)."
+        },
+        "source_root": { "type": ["string", "null"], "maxLength": 1000 },
+        "bytes_analyzed": { "type": ["integer", "null"], "minimum": 0 },
+        "files_analyzed": { "type": ["integer", "null"], "minimum": 0 },
+        "researcher_initial": {
+          "type": ["string", "null"],
+          "maxLength": 10,
+          "description": "3-4 letter lab initial that ran this analysis."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
