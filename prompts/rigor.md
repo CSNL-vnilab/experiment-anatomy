@@ -37,11 +37,12 @@ Notes:
 Static checks (binary, all must be evidence-backed):
 
 - **every_factor_has_role**: ∀ f ∈ factors, f.role != "unknown".
-- **no_single_value_factor**: ∀ f ∈ factors, len(f.levels) > 1 OR f.level_source ∈ {`rng-sampled`, `adaptive`, `conditions-file`}.
+- **no_single_value_factor**: ∀ f ∈ factors, len(f.levels) > 1 OR f.level_source ∈ {`rng-sampled`, `adaptive`, `conditions-file`, `inline-literal` and the level set is *defined elsewhere* (e.g. inside a pre-generated schedule .mat) — describe that in `description`}.
 - **saved_5_categories_present**: each of {stimulus, response, timing, block_summary, session_meta} has ≥ 1 entry — UNLESS the paradigm legitimately lacks one (e.g. a survey has no per-trial timing channel — flag in `open_questions` instead).
 - **hierarchy_complete**: hierarchy.one_liner is non-null AND
-  `n_blocks * n_trials_per_block` (or the phase sum) is ≥ total_trials_estimate / 1.5.
+  `n_blocks * n_trials_per_block` (or the phase sum) is ≥ total_trials_estimate / 1.5. If any count is `null`, this check is `false` AND a topic=`hierarchy` `open_question` MUST be queued (no silent null).
 - **no_dead_branches_in_conditions**: conditions[] only lists factor-level combos that the code branches into (use `applies_when` evidence).
+- **schedule_consistency** (only evaluated when the PTB pre-generated schedule pattern is active — see `prompts/lenses/psychtoolbox.md` § "Pre-generated schedule pattern"): the literal block/trial constants in the entry/setup AGREE with the schedule cell-array dimensions (`length(par.schedule.Stm)` × `length(par.schedule.Stm{1})`). If they disagree, this check is `false` and the mismatch must appear in a topic=`hierarchy` `open_question`. If the pattern isn't active, the check is `true` by default (vacuously).
 
 ## Sanity checks before scoring
 

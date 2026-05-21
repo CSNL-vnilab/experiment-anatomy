@@ -9,7 +9,7 @@
       "name": "experiment-anatomy",
       "source": ".",
       "description": "Opus-driven structured deconstruction of an experiment codebase, emits PostgreSQL-feedable JSON. Works on any platform / paradigm / session count.",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "category": "research",
       "tags": ["research", "experiment", "review", "postgres"]
     }

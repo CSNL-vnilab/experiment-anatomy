@@ -127,6 +127,52 @@ experiment-spec
 Full schema: [`schemas/experiment-spec.schema.json`](./schemas/experiment-spec.schema.json).
 PostgreSQL DDL + upsert flow: [`schemas/postgres-mapping.md`](./schemas/postgres-mapping.md).
 
+## Audience
+
+**CSNL lab internal use.** The plugin's lenses encode CSNL conventions
+(per-subject pre-generated schedules in `trial_schedule.mat`, the
+`make_schedule_*.m` generator pattern, the per-block `par.tp.<channel>`
+timing structure, …). Non-CSNL labs can fork and prune lab-specific
+identifiers if useful.
+
+## Changelog
+
+### v0.1.1 (interview-driven hardening)
+
+Based on a real-experiment correctness review:
+
+- **PTB lens — "Pre-generated schedule" pattern as first-class**:
+  detect via `load(*schedule*.mat)` AND a generator file
+  `(make|generate|build|prep|seed)_?.*(schedule|trial).*\.m`. When
+  active, enforce `factor.level_source="inline-literal"`,
+  `randomization.scheme="fixed_schedule"`, FULL seed credit (gold-
+  standard reproducibility).
+- **Within-subject vs between-subject counterbalance**: classification
+  follows what the generator iterates over (per `(subj, day)` →
+  within; per `subj` only → between). Read the generator source —
+  the schedule `.mat` only stores the resolved mapping, not the scheme.
+- **Anatomist passes 3/4/5/10 updated** to detect the schedule pattern,
+  pull the generator into the bundle, derive `design_matrix_summary`
+  from generator source, and award seed/randomization full credit
+  automatically when active.
+- **Hard rule strengthened — "no invented counts"**: `n_blocks`,
+  `n_trials_per_block`, `total_trials_estimate`, level values must be
+  read from a literal in the source OR left null + queued in
+  `open_questions[]`. Never filled from intuition or sibling
+  experiments.
+- **New static check `schedule_consistency`**: when the schedule
+  pattern is active, literal block/trial constants must agree with
+  schedule cell-array dimensions; mismatch flags + open_question.
+- **Example corrected**: `examples/timeexp2-example.json` reflects the
+  real TimeExp2 structure (within-subject counterbalanced dist,
+  pre-generated schedule + scheduleRngState, illustrative-marker on
+  counts). The earlier example had three factual errors that the
+  hardening above is designed to prevent on future runs.
+
+### v0.1.0
+
+Initial release. See above sections for features.
+
 ## License
 
 MIT. See [LICENSE](./LICENSE).

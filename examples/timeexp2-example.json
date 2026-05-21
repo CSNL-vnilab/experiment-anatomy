@@ -4,8 +4,8 @@
     "title": "Time-reproduction (Time2Dist) — Exp2",
     "short_id": "TimeExp2",
     "version": null,
-    "summary": "Multi-session time-reproduction paradigm. Participants observe a moving stimulus, an occlusion period of variable duration, and reproduce the perceived duration via a key-press or click response. Exp2 differs from Exp1 in the stimulus distribution (between-subject) and adds a per-trial confidence rating.",
-    "research_question": "Whether prior shape of the duration distribution (uniform vs. bimodal) systematically biases temporal reproduction across days, and whether confidence tracks bias magnitude.",
+    "summary": "Multi-session time-reproduction paradigm with a *pre-generated per-subject schedule*. A make_schedule_Exp2.m script is run once at recruitment to produce trial_schedule.mat — which fixes the stimulus list, distribution-to-day mapping, and RNG state for every block. The main script loads that file at block start and replays it deterministically; no per-trial randomization in the run-time loop. Day 1 is uniform-prior training; Days 2-5 carry the within-subject counterbalanced stimulus distribution (each subject sees 2 days of dist A and 2 days of dist B; the day-to-dist assignment varies between subjects). ILLUSTRATIVE EXAMPLE — exact n_blocks/n_trials/total_trials are placeholders; the live spec is produced by running /experiment-anatomy:analyze against the source.",
+    "research_question": "Whether within-subject exposure to different prior distributions (A vs. B) systematically reshapes temporal reproduction across days.",
     "paradigm_genre": "estimation"
   },
   "platform": {
@@ -20,53 +20,56 @@
     "detection_confidence": 0.99
   },
   "hierarchy": {
-    "one_liner": "session: par.day 1..5 (within_subject); block: for iR=1:nBlocks (Day1=10 train, Day2-5=12 test); trial: for iT=1:nT (40); total ≈ 5 × ~11 × 40 = 2200",
+    "one_liner": "session: par.day 1..5 (within_subject); block: for iR=1:nBlocks (Day1 training vs Day2-5 test counts read from par.schedule); trial: for iT=1:nT (read from par.schedule.Stm{iR}); pre-generated schedule replayed deterministically — see open_questions for exact counts.",
     "n_sessions": 5,
     "sessions": [
       {
         "index": 1,
-        "label": "Day 1 — training",
+        "label": "Day 1 — uniform-prior training",
         "day_range": "1",
         "phases": [
           {
             "kind": "training",
             "label": "uniform-prior training",
-            "n_blocks": 10,
-            "n_trials_per_block": 40,
+            "n_blocks": null,
+            "n_trials_per_block": null,
             "applies_when": "par.day == 1",
-            "description": "10 blocks of uniform-prior training; feedback after every trial."
+            "description": "Training phase with uniform-prior stimuli (dist=U). Block/trial counts read from the schedule — placeholder here pending live /analyze."
           }
         ]
       },
       {
         "index": 2,
-        "label": "Day 2-5 — test",
+        "label": "Day 2-5 — counterbalanced test",
         "day_range": "2-5",
         "phases": [
           {
             "kind": "test",
-            "label": "test (between-subject dist)",
-            "n_blocks": 12,
-            "n_trials_per_block": 40,
+            "label": "test (within-subject counterbalanced dist A/B)",
+            "n_blocks": null,
+            "n_trials_per_block": null,
             "applies_when": "par.day > 1",
-            "description": "12 blocks; dist (A or B) assigned per-subject via mod(subjNum,2)."
+            "description": "Test phase; dist on each day determined by the per-subject schedule (2 A-days + 2 B-days across Days 2-5). Block/trial counts read from the schedule."
           }
         ]
       }
     ],
-    "total_trials_estimate": 2200,
-    "estimated_duration_min": 90
+    "total_trials_estimate": null,
+    "estimated_duration_min": null
   },
   "factors": [
     {
       "name": "dist",
       "display_name": "stimulus distribution",
       "type": "categorical",
-      "levels": ["A", "B"],
+      "levels": ["U", "A", "B"],
       "level_source": "inline-literal",
-      "role": "between_subject",
-      "description": "Between-subject distribution of stimulus durations. Assigned via mod(subjNum, 2).",
-      "evidence": ["Exp2/sub/exp_info_Exp2.m:31"]
+      "role": "within_subject",
+      "description": "Stimulus distribution. U = uniform (Day 1 training only). A and B are the test distributions; each subject experiences 2 days of A and 2 days of B during Days 2-5. Day-to-dist mapping is generated per subject in make_schedule_Exp2.m and stored in trial_schedule.mat.",
+      "evidence": [
+        "Exp2/sub/make_schedule_Exp2.m: per-subject day-to-dist assignment",
+        "Exp2/sub/Seed_Duration.m: par.schedule.dist read at block start"
+      ]
     },
     {
       "name": "day",
@@ -74,46 +77,49 @@
       "levels": [1, 2, 3, 4, 5],
       "level_source": "inline-literal",
       "role": "within_subject",
-      "description": "Session day. Day 1 = training-only, Day 2-5 = test.",
-      "evidence": ["Exp2/main_duration.m:24"]
+      "description": "Session day. Day 1 = uniform-prior training, Days 2-5 = test with counterbalanced dist.",
+      "evidence": ["Exp2/main_duration.m: par.day driven by session loop"]
     },
     {
       "name": "stim_duration",
       "type": "continuous",
       "levels": [],
-      "level_source": "rng-sampled",
+      "level_source": "inline-literal",
       "role": "per_trial",
-      "description": "Per-trial target stimulus duration drawn from dist on each trial.",
-      "evidence": ["Exp2/sub/Seed_Duration.m:18"]
+      "description": "Per-trial target duration. NOT sampled at run time — read from par.schedule.Stm{iR}(iT), where the schedule was generated once per subject by make_schedule_Exp2.m and saved to trial_schedule.mat. The empirical distribution per day depends on `dist`.",
+      "evidence": [
+        "Exp2/main_duration.m: par.Stm = par.schedule.Stm{iR}(iT)",
+        "Exp2/sub/make_schedule_Exp2.m: stimulus list generation"
+      ]
     }
   ],
   "conditions": [
     {
-      "label": "training",
+      "label": "training-U",
       "factor_assignments": { "day": "1", "dist": "U" },
-      "description": "Uniform-prior training on Day 1, all subjects."
+      "description": "Day 1, all subjects, uniform-prior training."
     },
     {
       "label": "test-A",
-      "factor_assignments": { "day": "2-5", "dist": "A" },
-      "description": "Even-subjNum subjects, Days 2-5."
+      "factor_assignments": { "dist": "A" },
+      "description": "Test condition with distribution A. Realized on 2 of Days 2-5 per subject — specific days assigned by the per-subject counterbalance in make_schedule_Exp2.m."
     },
     {
       "label": "test-B",
-      "factor_assignments": { "day": "2-5", "dist": "B" },
-      "description": "Odd-subjNum subjects, Days 2-5."
+      "factor_assignments": { "dist": "B" },
+      "description": "Test condition with distribution B. Realized on the other 2 of Days 2-5 per subject (counterbalanced with test-A)."
     }
   ],
-  "design_matrix_summary": "Between-subject: dist ∈ {A, B} assigned by mod(subjNum, 2). Within-subject longitudinal: day 1..5 (training day 1, test days 2-5).",
+  "design_matrix_summary": "Within-subject counterbalance of dist across Days 2-5: each subject experiences 2 A-days + 2 B-days. The day-to-dist mapping per subject (e.g., subjNum mod 4 → A-B-B-A / A-B-A-B / B-A-A-B / B-A-B-A across Days 2-5) is generated once at recruitment by make_schedule_Exp2.m and frozen into trial_schedule.mat. The run-time main script never decides dist — it reads par.schedule.dist[par.day].",
   "parameters": [
     {
-      "name": "nT",
-      "value": 40,
-      "type": "number",
-      "unit": "trials",
-      "shape": "constant",
-      "description": "Trials per block.",
-      "evidence": ["Exp2/sub/param_TrialRunTime_Duration.m:5"]
+      "name": "schedule_file",
+      "value": "trial_schedule.mat",
+      "type": "string",
+      "unit": null,
+      "shape": "input",
+      "description": "Per-subject pre-generated schedule loaded at session start. Contains par.schedule (Stm, Stm_pr, dist-per-day, etc.) and par.scheduleRngState. Generated once at recruitment by make_schedule_Exp2.m.",
+      "evidence": ["Exp2/main_duration.m: load(fullfile(..., 'trial_schedule.mat'))"]
     },
     {
       "name": "tprecue",
@@ -122,7 +128,7 @@
       "unit": "sec",
       "shape": "constant",
       "description": "Pre-cue interval before the moving stimulus appears.",
-      "evidence": ["Exp2/sub/param_TrialRunTime_Duration.m:12"]
+      "evidence": ["Exp2/sub/param_TrialRunTime_Duration.m: tprecue assignment"]
     }
   ],
   "saved_variables": [
@@ -133,8 +139,8 @@
       "format": "float",
       "unit": "sec",
       "sink": "results.mat:par.results.Stm{iR}(iT)",
-      "description": "Target stimulus duration on each trial.",
-      "evidence": ["Exp2/main_duration.m:88"]
+      "description": "Target stimulus duration for the trial. Source: par.schedule.Stm{iR}(iT) — pre-generated, not sampled at run time.",
+      "evidence": ["Exp2/main_duration.m: per-trial Stm record"]
     },
     {
       "name": "Est",
@@ -144,17 +150,7 @@
       "unit": "sec",
       "sink": "results.mat:par.results.Est{iR}(iT)",
       "description": "Subject's reproduced duration estimate.",
-      "evidence": ["Exp2/main_duration.m:142"]
-    },
-    {
-      "name": "Confidence",
-      "scale": "per_trial",
-      "category": "response",
-      "format": "int",
-      "unit": "rating 1-7",
-      "sink": "results.mat:par.results.Confidence{iR}(iT)",
-      "description": "Per-trial confidence rating (Exp2-only).",
-      "evidence": ["Exp2/main_duration.m:158"]
+      "evidence": ["Exp2/main_duration.m: per-trial Est record"]
     },
     {
       "name": "tp.vbl_start",
@@ -164,7 +160,27 @@
       "unit": "sec (GetSecs)",
       "sink": "results.mat:par.tp.vbl_start{iR}(iT)",
       "description": "VBL timestamp at trial start.",
-      "evidence": ["Exp2/sub/Duration_Occlusion.m:311"]
+      "evidence": ["Exp2/sub/Duration_Occlusion.m: per-trial VBL capture"]
+    },
+    {
+      "name": "schedule",
+      "scale": "per_subject",
+      "category": "session_meta",
+      "format": "struct",
+      "unit": null,
+      "sink": "trial_schedule.mat:par.schedule (also mirrored into results.mat:finalState.schedule)",
+      "description": "The full pre-generated per-subject schedule (stimulus list per block × trial, dist per day, feedback masks). Read at block start; written into the per-session results.mat for self-contained replay.",
+      "evidence": ["Exp2/sub/make_schedule_Exp2.m: schedule generation"]
+    },
+    {
+      "name": "scheduleRngState",
+      "scale": "per_subject",
+      "category": "rng_state",
+      "format": "struct",
+      "unit": null,
+      "sink": "trial_schedule.mat:par.scheduleRngState",
+      "description": "RNG state captured at schedule generation time. Enables exact reconstruction of the per-subject schedule from make_schedule_Exp2.m.",
+      "evidence": ["Exp2/sub/make_schedule_Exp2.m: rng + par.scheduleRngState = rng"]
     },
     {
       "name": "subID",
@@ -174,7 +190,17 @@
       "unit": null,
       "sink": "results.mat:finalState.subID",
       "description": "Subject identifier.",
-      "evidence": ["Exp2/sub/exp_info_Exp2.m:8"]
+      "evidence": ["Exp2/sub/exp_info_Exp2.m: par.subID assignment"]
+    },
+    {
+      "name": "day",
+      "scale": "per_session",
+      "category": "session_meta",
+      "format": "int",
+      "unit": null,
+      "sink": "results.mat:finalState.day",
+      "description": "Session day (1..5).",
+      "evidence": ["Exp2/sub/exp_info_Exp2.m: par.day capture"]
     }
   ],
   "display": {
@@ -183,20 +209,20 @@
         "kind": "draw",
         "name": "Screen('DrawTexture')",
         "drives": ["stim_duration", "dist"],
-        "evidence": ["Exp2/sub/Duration_Occlusion.m:201"]
+        "evidence": ["Exp2/sub/Duration_Occlusion.m: DrawTexture call"]
       },
       {
         "kind": "flip",
         "name": "Screen('Flip')",
         "drives": [],
-        "evidence": ["Exp2/sub/Duration_Occlusion.m:230"]
+        "evidence": ["Exp2/sub/Duration_Occlusion.m: Flip call"]
       }
     ],
     "figure_outputs": [
       {
         "sink": "figures/<subID>_day<N>_estimate-vs-stim.png",
         "what": "Per-day scatter of reproduction vs. target duration with regression line.",
-        "evidence": ["Exp2/sub/save_dayreport.m:42"]
+        "evidence": ["Exp2/sub/save_dayreport.m: saveas(... '.png')"]
       }
     ]
   },
@@ -205,29 +231,34 @@
       {
         "path": "/Volumes/CSNL_new-1/people/JOP/Magnitude/Experiment/Time2Dist/Exp2/results/<subID>_day<N>.mat",
         "kind": "per_session_log",
-        "format_hint": "MATLAB .mat with par.results struct"
+        "format_hint": "MATLAB .mat with par.results struct (per-trial Stm/Est/Confidence + finalState meta)"
       },
       {
         "path": "/Volumes/CSNL_new-1/people/JOP/Magnitude/Experiment/Time2Dist/Exp2/results/run-wise-backup/results_<subID>_day<N>_block<iR>.mat",
         "kind": "per_block_log",
         "format_hint": "blockState struct"
+      },
+      {
+        "path": "/Volumes/CSNL_new-1/people/JOP/Magnitude/Experiment/Time2Dist/Exp2/results/<subID>/trial_schedule.mat",
+        "kind": "config",
+        "format_hint": "par.schedule + par.scheduleRngState — the pre-generated counterbalance per subject"
       }
     ],
     "backup_paths": [
       "/Volumes/CSNL_new-1/people/JOP/Magnitude/Experiment/Time2Dist/Exp2/results/codebackup.zip"
     ],
-    "naming_convention": "<subID>_day<N>.mat for session logs; results_<subID>_day<N>_block<iR>.mat for per-block backups."
+    "naming_convention": "<subID>_day<N>.mat for session logs; results_<subID>_day<N>_block<iR>.mat for per-block backups; <subID>/trial_schedule.mat for the per-subject schedule."
   },
   "reproducibility": {
     "seed": {
       "pinned": true,
-      "source": "subjNum * day",
-      "scope": "per_session",
-      "evidence": "Exp2/main_duration.m:18"
+      "source": "saved RNG state in trial_schedule.mat (par.scheduleRngState) — captured during make_schedule_Exp2.m at recruitment",
+      "scope": "per_subject",
+      "evidence": "Exp2/sub/make_schedule_Exp2.m: par.scheduleRngState = rng"
     },
     "randomization": {
       "scheme": "fixed_schedule",
-      "description": "Per-subject schedule generated at recruitment and saved into trial_schedule.mat; replayed deterministically."
+      "description": "Per-subject schedule pre-generated once at recruitment by make_schedule_Exp2.m with a captured RNG state; replayed deterministically each session by loading trial_schedule.mat at block start. No per-trial sampling in the run-time script. A stranger with trial_schedule.mat can reproduce the exact stimulus sequence."
     },
     "version_pinning": {
       "total": 2,
@@ -239,27 +270,27 @@
       "completeness": "absent"
     },
     "score": {
-      "overall": 53,
+      "overall": 65,
       "components": {
         "seed": 25,
         "randomization": 15,
         "version_pinning": 12,
         "env_capture": 0,
-        "deterministic_paths": 12
+        "deterministic_paths": 13
       },
-      "notes": "Strong seed + randomization scheme; no environment capture file. Adding a setup_environment.m documenting PTB build + MATLAB version would bring env_capture to partial."
+      "notes": "Pre-generated schedule + saved RNG state earn full seed/randomization credit (gold-standard reproducibility). Lost on environment capture only — no requirements/setup file documents PTB version explicitly."
     }
   },
   "rigor": {
     "counterbalancing": {
       "present": true,
-      "scheme": "Between-subject dist assigned by mod(subjNum, 2); balanced across recruited cohort.",
-      "evidence": "docs/01_experiment_design.md §3"
+      "scheme": "Within-subject counterbalance of dist across Days 2-5 (2 A-days + 2 B-days per subject); day-to-dist mapping generated once per subject in make_schedule_Exp2.m and saved into trial_schedule.mat.",
+      "evidence": "Exp2/sub/make_schedule_Exp2.m: per-subject day-to-dist assignment"
     },
     "sample_size_justification": {
-      "present": true,
-      "method": "precedent",
-      "evidence": "docs/01_experiment_design.md §5 cites N=20 per dist (precedent Jazayeri & Shadlen 2010)"
+      "present": null,
+      "method": null,
+      "evidence": "queued as open_question — not visible from code alone"
     },
     "blinding": {
       "applicable": false,
@@ -273,38 +304,60 @@
     },
     "exclusion_rules": {
       "rules_found": [
-        "RT cutoff: Est outside [0.1, 3.0] sec → trial excluded",
-        "Block accuracy < 30% → block flagged in QC report"
+        "RT cutoff: Est outside the response window → trial flagged (exact bounds queued as open_question)",
+        "Block accuracy floor: < threshold → flagged in QC report (threshold queued as open_question)"
       ]
     },
     "checks": {
       "every_factor_has_role": true,
       "no_single_value_factor": true,
       "saved_5_categories_present": true,
-      "hierarchy_complete": true,
+      "hierarchy_complete": false,
       "no_dead_branches_in_conditions": true
     },
     "score": {
-      "overall": 78,
-      "notes": "Strong on counterbalancing + precedent-based N + exclusion rules. -10 for no pre-registration; -7 for sample-size being precedent rather than power-analysis."
+      "overall": 60,
+      "notes": "Strong on counterbalancing (per-subject, within-subject). Hierarchy is structurally correct but exact n_blocks/n_trials placeholders pending live /analyze. Sample-size justification and pre-registration not visible from code alone."
     }
   },
   "open_questions": [
     {
-      "topic": "saved_variables",
-      "question": "Is the Confidence rating Exp2-only, or was it back-ported into Exp1 in a later session?",
-      "evidence": "Exp2/main_duration.m:158 — present here; Exp1/main_duration.m has no Confidence channel",
+      "topic": "hierarchy",
+      "question": "정확한 n_blocks / n_trials_per_block 은 Day 1 (training) 과 Day 2-5 (test) 각각 얼마인가요? trial_schedule.mat 의 par.schedule.Stm{iR} 셀 배열 크기를 보면 정확히 잡힙니다.",
+      "evidence": "trial_schedule.mat: par.schedule.Stm cell array dims",
       "options": [
-        "Exp2-only — Exp1 stays without",
-        "Back-ported to Exp1 — please point me to the file/line",
-        "Not sure"
+        "Day1 training: <N> blocks × <M> trials; Day2-5 test: <N> × <M>",
+        "Day마다 다름 — 각 day 별 (blocks, trials) 직접 입력",
+        "건너뜀 — 라이브 /analyze 로 확정"
+      ]
+    },
+    {
+      "topic": "factors",
+      "question": "Day 2-5 중 어떤 day 가 dist A 이고 어떤 day 가 dist B 인지의 매핑이 subjNum 의 어떤 함수인가요? (예: subjNum mod 4 → pattern_index)",
+      "evidence": "Exp2/sub/make_schedule_Exp2.m: per-subject day-to-dist assignment",
+      "options": [
+        "subjNum mod 4 → 4 패턴 (ABBA / ABAB / BABA / BAAB)",
+        "subjNum mod 2 → 2 패턴 (AABB / BBAA)",
+        "patList{ceil(subjNum/N)} 형태로 별도 정의",
+        "직접 입력"
+      ]
+    },
+    {
+      "topic": "rigor",
+      "question": "표본 크기 (N) 의 근거는 무엇인가요? (예: power analysis 결과 / 선행연구 N / ad hoc)",
+      "evidence": "코드에는 보이지 않음 — docs/papers/IRB 문서 참조",
+      "options": [
+        "Power analysis (논문/사전등록에 명시)",
+        "선행연구 (Jazayeri & Shadlen 2010 등)의 N 따름",
+        "Ad hoc — 자원 가용성",
+        "건너뜀"
       ]
     }
   ],
   "provenance": {
     "plugin_version": "0.1.0",
     "schema_version": "1.0.0",
-    "analyzed_at": "2026-05-20T18:30:00Z",
+    "analyzed_at": "2026-05-21T00:00:00Z",
     "model": "claude-opus-4-7",
     "passes_run": [
       "survey",
@@ -317,12 +370,11 @@
       "display",
       "storage",
       "reproducibility",
-      "rigor",
-      "interview-1"
+      "rigor"
     ],
     "source_root": "/Volumes/CSNL_new-1/people/JOP/Magnitude/Experiment/Time2Dist/Exp2",
-    "bytes_analyzed": 67994,
-    "files_analyzed": 28,
+    "bytes_analyzed": null,
+    "files_analyzed": null,
     "researcher_initial": "JOP"
   }
 }

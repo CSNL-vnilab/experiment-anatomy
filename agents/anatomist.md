@@ -74,7 +74,17 @@ Identity:
 
 ### Pass 3 — Hierarchy
 
-Walk the code through the *outer-to-inner* loop structure:
+Walk the code through the *outer-to-inner* loop structure.
+
+**Pre-step — pre-generated schedule detection.** Before reading counts,
+check whether the PTB lens's "pre-generated schedule" pattern fires:
+both (a) a `load(... *schedule*.mat ...)` call in the entry/1-hop
+callees AND (b) a generator file `(make|generate|build|prep|seed)_?.*
+(schedule|trial).*\.m` exist. If yes, set an internal flag
+`SCHEDULE_ACTIVE=true` and follow the rules in
+`prompts/lenses/psychtoolbox.md` § "Hierarchy counts" — *literal
+constants are still the primary source*; schedule dims are a
+sanity check that flags `schedule_consistency`.
 
 - Session-level: `par.day`, `expInfo['session']`, a `for sessIdx in …` loop,
   or just "single session" if there's no day axis.
@@ -89,6 +99,20 @@ Write `hierarchy.one_liner` first; it forces you to be specific. Example:
 `"session: par.day 1..5 (within_subject); block: for iR=1:nBlocks (Day1=10/Day2-5=12); trial: for iT=1:nT (40)"`.
 
 ### Pass 4 — Factors (manipulated variables / IVs)
+
+**Pre-step — read the schedule generator FIRST when SCHEDULE_ACTIVE.**
+If Pass 3's detection flag fired, the counterbalance scheme lives
+entirely inside the generator source (`make_*schedule*.m` etc.), NOT
+in the runtime loop. Locate the generator file, ensure it's in the
+bundle (the bundler's domain-supplement pass should have included it;
+if not, supplement it now). Read its outer loops — does it iterate per
+`(subj, day)` writing day-varying conditions (within-subject CB), or
+per `subj` only (between-subject CB)? That determines `factor.role`
+for any condition the generator decides. If the generator is missing
+from the bundle, mark every schedule-derived factor with
+`role="unknown"` AND queue a topic=`conditions` open_question for the
+counterbalance scheme — `design_matrix_summary` stays null until the
+researcher answers.
 
 EVERY factor MUST carry `role` (which level it varies at). If you can't
 tell, the role is `unknown` AND that goes in `open_questions`.
@@ -110,6 +134,17 @@ Adaptive procedures (QUEST/staircase/Bayesian) → `role=per_trial`,
 Conditions are factor-level combinations the code **actually executes**.
 No Cartesian explosion. Counterbalancing schemes / Latin squares go into
 `design_matrix_summary` (free-form), NOT into conditions[].
+
+When SCHEDULE_ACTIVE:
+
+- `design_matrix_summary` is filled from the GENERATOR source, not the
+  runtime. If the generator was readable in Pass 4, write a verbatim
+  description of the CB scheme there (e.g., "subjNum mod 4 → ABBA /
+  ABAB / BAAB / BABA across Days 2-5 (within-subject)").
+- If the generator wasn't readable, `design_matrix_summary = null` AND
+  the open_question from Pass 4 stays queued.
+- `conditions[]` lists each *realized condition once*; do NOT enumerate
+  the per-subject permutations (that's the design matrix's job).
 
 ### Pass 6 — Parameters (setup constants)
 
@@ -166,6 +201,19 @@ Concrete checks:
 - `environment_capture.files_found` — list the actual filenames present.
   `completeness=full` if a lockfile is there, `partial` if only
   requirements/environment without lock, `absent` if nothing.
+
+**Pre-step — SCHEDULE_ACTIVE auto-credit.** If Pass 3's detection flag
+fired AND both a schedule `.mat` is loaded AND a captured RNG state
+field exists in the saved_variables (`scheduleRngState` or equivalent
+under `rng_state`), award the FULL seed component (25/25) and the FULL
+randomization component (15/15) automatically — this is the gold-
+standard pattern (a stranger with the `.mat` reproduces the exact
+sequence). Set
+`randomization.scheme = "fixed_schedule"`,
+`seed.pinned = true`,
+`seed.source = "saved RNG state in <schedule-file>"`,
+`seed.scope = "per_subject"`,
+and add the notes accordingly.
 
 Score components (sum ≤ 100):
 - seed: 25 if pinned with deterministic source, 15 if pinned with
@@ -237,6 +285,12 @@ the Markdown to `./experiment-spec-summary.md` in the researcher's cwd.
 2. **No invented values**. If the spec asks for `seed.source` and you
    couldn't find one, write `pinned: false`, `source: null` and put
    the question in `open_questions`. Do NOT guess "42" or "subjNum".
+   **This applies to counts too**: `n_blocks`, `n_trials_per_block`,
+   `total_trials_estimate`, level values — never fill from sibling
+   experiments, intuition, or "looks plausible". Either read from a
+   literal in the source, or leave null + queue an `open_question`.
+   A null with an open_question is correct output; a fabricated value
+   is wrong output even when it accidentally turns out right.
 
 3. **One concern per interview question**. Multiple-choice over
    open-ended. Always offer "건너뜀 / 모름" as an option.

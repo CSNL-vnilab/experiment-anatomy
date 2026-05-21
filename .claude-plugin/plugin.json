@@ -1,6 +1,6 @@
 {
   "name": "experiment-anatomy",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Opus-driven deep review of a single experiment codebase (any platform — Psychtoolbox / PsychoPy / jsPsych / lab.js / custom — any paradigm, any session count). Multi-pass workflow with a grounded one-question-at-a-time interview. Emits a strict PostgreSQL-feedable JSON spec covering identity, platform, session→block→trial hierarchy, manipulated variables with role, conditions, parameters, saved variables across 5 scales, display outputs, storage paths, and explicit reproducibility / rigor scores with evidence. Researchers run /experiment-anatomy:analyze in their experiment directory; the output is shape-identical across paradigms so a lab DB can aggregate everyone's specs.",
   "author": {
     "name": "CSNL Lab",

@@ -551,7 +551,8 @@
             "no_single_value_factor": { "type": "boolean" },
             "saved_5_categories_present": { "type": "boolean" },
             "hierarchy_complete": { "type": "boolean" },
-            "no_dead_branches_in_conditions": { "type": "boolean" }
+            "no_dead_branches_in_conditions": { "type": "boolean" },
+            "schedule_consistency": { "type": "boolean", "description": "Only meaningful when the PTB pre-generated schedule pattern is active; literal block/trial constants in entry must agree with schedule cell-array dimensions. Omit when not applicable." }
           },
           "additionalProperties": false
         },
