@@ -59,9 +59,93 @@ so the researcher knows where you are.
 ### Pass 2 — Platform & identity
 
 Fill `platform` and `identity`. Detect framework by API surface (the
-strongest signals come from `prompts/lenses/*.md` — load the right lens
-for the detected platform). `detection_confidence` < 0.7 → add a
-`platform`-topic open question.
+strongest signals come from `prompts/lenses/*.md`). `detection_confidence`
+< 0.7 → add a `platform`-topic open question.
+
+**Lens loading is a file-read, not an aspirational directive.** After
+detecting the framework, use the Read tool to ingest
+`prompts/lenses/<framework>.md` verbatim into your working context
+BEFORE running Passes 3–7. The exact file path is relative to the
+plugin install root — `${CLAUDE_PLUGIN_ROOT}/prompts/lenses/<x>.md`.
+If the path resolution fails, fall back to `generic.md` and add an
+`open_question` with `topic="platform"`, `question="lens file
+unreadable — manual platform confirmation needed"`. Do NOT proceed
+through Passes 3–7 with the lens content unread.
+
+**schema_version emission.** Use `"1.1.0"` in the output's
+`schema_version` (root) AND `provenance.schema_version`. v0.2.0 of
+this plugin produces 1.1.0 specs; the schema accepts both 1.0.0 and
+1.1.0 for backward compatibility, but new specs default to 1.1.0.
+
+**Framework enum + variants.** Recognize these distinct platforms:
+
+- `psychtoolbox` — MATLAB + PTB (`Screen('OpenWindow'`, `KbCheck`,
+  `PsychDefaultSetup`). Load `prompts/lenses/psychtoolbox.md`.
+- `psychopy` — Python + PsychoPy (`from psychopy import ...`,
+  `visual.Window`). Load `prompts/lenses/psychopy.md` § 1–4.
+- `psychojs` — PsychoJS Builder export OR hand-written PsychoJS web
+  runtime. Detect via the four-file fingerprint (`.psyexp` + `.js` +
+  `<name>-legacy-browsers.js` + `index.html` with `[PsychoPy]` title)
+  → `psychojs-builder` sub-variant; otherwise → `psychojs-handwritten`.
+  Load `prompts/lenses/psychopy.md` § 5 ("PsychoJS Builder export
+  subsection").
+- `mgl` — MATLAB + Gardner's mgl framework (`mglOpen`, `mglFlush`,
+  `initTask`/`updateTask`/`tickScreen` OR `mglBltTexture` +
+  `mglGetKeyEvent`). Distinct from PTB — load
+  `prompts/lenses/mgl.md`. Sub-variants stored in `platform.variant`:
+  - `mgl-callback` — entry file uses `initTask` + `@callbacks` + the
+    `while ... updateTask ... tickScreen ... end` loop.
+  - `mgl-primitive` — entry uses mgl primitives (`mglOpen`,
+    `mglFlush`, `mglCreateTexture`, `mglGetKeys`) + an explicit
+    `for iT = 1:nT` loop, NO callback framework anywhere in the
+    call graph.
+  - `mgl-hybrid` — entry uses mgl primitives BUT helper files in the
+    same directory contain the callback framework (HJL Main_RingExp
+    is the canonical case: `psychExpPDM.m` is primitive-mode, but
+    `taskTemplate.m` framework files sit beside it as library
+    includes — those framework files are NOT the entry). When this
+    pattern is detected, classify the project as `mgl-hybrid`; the
+    canonical entry is the file matching the canonical-entry picker
+    in `prompts/lenses/mgl.md` § "Canonical entry-point picker",
+    and Pass 4 factor extraction follows the mgl-primitive rules
+    (look for `expBlock.*Seq` / `genExpBlock` / `mseq`), NOT the
+    callback rules.
+- `jspsych` — `import { initJsPsych }` / `jsPsych.init(`. Load
+  `prompts/lenses/jspsych.md`.
+- `lab.js` — `new lab.flow.Sequence({content: [...]})`. Use generic.
+- `external` — local tree is data-only; the runner is hosted elsewhere
+  (Pavlovia / OSF / lab-private GitHub). Detection requires **BOTH
+  negative absence AND positive evidence**:
+  - Negative: ≥3 data files (`.csv` / `.psydat` / `.mat`), NO
+    `Screen(` / `visual.Window` / `mglOpen` / `initJsPsych` calls in
+    any local file.
+  - Positive (REQUIRED): a documented URL pointing at a live runner
+    or source export — Pavlovia URL (`pavlovia.org/run/<id>` or
+    `<user>.pavlovia.org/<exp>`), Gorilla study URL (`gorilla.sc/...`),
+    jsPsych-shop deployment, GitHub repo URL with experimental code,
+    OR a paper-companion URL the README cites as the runner source.
+  - If positive evidence is MISSING (e.g. just a small pilot tree
+    with no upstream URL), do NOT classify as `external`. Instead
+    use `framework="unknown"`, `external_host.kind="unknown"`, and
+    queue an `open_question` topic=`platform` asking the researcher
+    where the runner code lives. This prevents false-positive
+    promotion of small pilots.
+
+  When external IS confirmed, populate `platform.external_host`:
+  ```json
+  {
+    "kind": "pavlovia|gorilla|osf|github-elsewhere|lab-private|...",
+    "url": "<url-string-from-README>",
+    "evidence": "README.md:12 cites 'task hosted on pavlovia.org/<user>/<exp>'"
+  }
+  ```
+  See `prompts/lenses/psychtoolbox.md` § "External-host pattern".
+- `custom` / `mixed` — fall through to `prompts/lenses/generic.md`.
+
+`platform.detection_confidence` ≥ 0.9 when ≥4 hard signals fire and
+no negative signals; 0.7–0.9 when 2–3 signals fire; below 0.7 when
+detection is ambiguous (e.g. PTB-mixed-with-mgl) — file an
+`open_question` even if you pick a best guess.
 
 Identity:
 - `title` from docs if present, else propose one from the entry filename.
@@ -117,6 +201,30 @@ researcher answers.
 EVERY factor MUST carry `role` (which level it varies at). If you can't
 tell, the role is `unknown` AND that goes in `open_questions`.
 
+**Factors-live-in-multiple-places rule (per-framework):**
+
+- PTB: `par.X = [...]` literal in entry/setup; OR
+  `par.schedule.<X>{iR}{iT}` from a loaded `.mat` (SCHEDULE_ACTIVE);
+  OR runtime `randperm/Shuffle/randi` inside the trial loop.
+- mgl: `task.parameter.<X>` (crossed within-trial); `task.randVars.
+  uniform.<X>` (uniform-sampled per-trial); `task.randVars.calculated.
+  <X>` (RESPONSE SLOT, not a factor — emit as saved_variable);
+  AND `expBlock.<X>Seq` built by `genExpBlock*.m` / `mseq(...)`
+  (mgl-primitive pattern; same rules as PTB SCHEDULE_ACTIVE).
+- PsychoPy / PsychoJS: xlsx / csv columns from `data.importConditions(...)`
+  / `trialList: '*.xlsx'`. Read the xlsx — column header = factor
+  name, nunique ≤ 8 → categorical, nunique ≥ 10 with even spacing →
+  continuous, nunique == row_count → stimulus catalog (not a factor).
+  Hand-written `TrialHandler.importConditions(...)` outside any
+  `new TrialHandler({})` constructor = schedule lives in the calling
+  code, NOT in any visible loop's `trialList`.
+- jsPsych: `factorial_design`, `randomization.factorial`,
+  `timeline_variables` array.
+
+Always check all places — a script can use multiple. Missing the
+schedule generator / xlsx / mseq source is the #1 way to undercount
+factors by 50–80 %.
+
 Indicators per role:
 - `between_subject` — varies with subID/group/`mod(subjNum, N)`.
 - `within_subject` — varies with day/session.
@@ -127,7 +235,37 @@ Indicators per role:
   always a constant misclassified as an IV — flag in `open_questions`.
 
 Adaptive procedures (QUEST/staircase/Bayesian) → `role=per_trial`,
-`level_source=adaptive`, levels=[] is acceptable.
+`level_source=adaptive`, levels=[] is acceptable. When detected, also
+populate the root `adaptive_procedure` object per the PTB lens §
+"Adaptive procedures" / mgl lens § "Adaptive procedures":
+
+- `family`: one of `staircase | quest | quest_plus |
+  psi_kontsevich_tyler | bayesian_adaptive | pest | custom | unknown`.
+- `engine`: concrete call signature
+  (`upDownStaircase(1,2,init,step,levitt)` or
+  `qpInitialize(psiParamsDomainList=...)` or
+  `psybayes vars=[1 1 0] method=ent`).
+- `update_rule`: VERBATIM from the code. 1-up-2-down Levitt and
+  1-up-2-down PEST have different convergence behavior — do not merge.
+- `rule_confidence`: `high` (literal read from code), `medium`
+  (inferred from helper signature), `low` (selector loaded from
+  absent config / external module).
+- `per_trial_state_saved`: list of fields actually written to disk
+  for replay. Empty array signals "only final estimate saved" →
+  reproducibility drops to partial.
+- `termination`, `n_interleaved`, `interleaving_key`, `warm_start`,
+  `evidence`: as the schema declares.
+
+**Unresolved-rule fallback (hard rule 2 compatible).** If the
+adaptive update rule cannot be determined from the inspectable code
+(e.g. `s = upDownStaircase(1, 2, init, step, cfg.rule)` where
+`cfg.rule` comes from a config file you can't read), do NOT invent.
+Emit: `update_rule = null`, `rule_confidence = "low"`,
+`engine` carrying the call signature with the unresolved argument
+named verbatim, AND queue an `open_question` with topic=`factors`,
+question="adaptive update rule '<selector>' loaded from absent config
+— please confirm: levitt / pest / garcia-perez / other". The spec
+remains valid because every field that you can't fill is `null`.
 
 ### Pass 5 — Conditions
 
@@ -215,6 +353,33 @@ sequence). Set
 `seed.scope = "per_subject"`,
 and add the notes accordingly.
 
+**Pre-step — ADAPTIVE_REPLAYABLE auto-credit.** If `adaptive_procedure`
+is present (non-null) AND `per_trial_state_saved` is non-empty (the
+saved fields are sufficient to replay the trajectory without
+re-running the RNG-dependent algorithm), award the FULL randomization
+component (15/15). Field-saved requirements by family:
+
+- staircase: at least `response[]` + `strength[]` + init params.
+- quest / quest_plus: at least `intensity[]` + `response[]` (or full
+  posterior history).
+- psi_kontsevich_tyler: at least `psy` struct (posterior over
+  μ,σ,λ + trial history) saved across trials.
+- bayesian_adaptive: per-trial posterior summary OR full
+  particle/grid snapshot (`Theta{i_tr}` style).
+
+If `per_trial_state_saved = []` (only final estimate saved), do NOT
+auto-credit — randomization scores `partial` (8/15) at most.
+
+The seed component is scored independently from the adaptive replay
+credit: even with full per-trial state, if the procedure uses an
+internal RNG (proposal noise, particle init) without a pinned seed,
+seed deductions still apply.
+
+**Internal-flag-output prohibition.** `SCHEDULE_ACTIVE` and
+`MGL_PREBUILT_SEQUENCE_ACTIVE` are internal classifier flags only.
+NEVER emit either string in the spec JSON. Schedule-derived factors
+use `level_source="inline-literal"`. Pre-built mgl sequences likewise.
+
 Score components (sum ≤ 100):
 - seed: 25 if pinned with deterministic source, 15 if pinned with
   os.time/clock, 5 if `rng('shuffle')` documented, 0 if unset.
@@ -267,9 +432,16 @@ When the workflow is done, emit exactly two artifacts in this order:
    a `from-first-{-to-last-}` extractor.
 
 2. A **Korean Markdown summary** (≤ ~80 lines) the researcher reads:
-   - 한 줄 정체성: title + paradigm_genre + framework
+   - 한 줄 정체성: title + paradigm_genre + framework (sub-variant
+     포함 — 예: `mgl-hybrid` / `psychojs-builder` / `external
+     (pavlovia)`)
    - 계층 한 줄 (hierarchy.one_liner)
    - 조작변수 N개 (role 별 카운트), 파라미터 N개, 저장변수 N개
+   - **적응형 절차**: `adaptive_procedure` 가 있으면 한 줄로
+     family + update_rule + per_trial_state 저장 여부 + 종료 기준.
+     없으면 "constant-stimuli (적응형 없음)".
+   - **외부 호스팅**: framework=`external` 일 때 `external_host.kind`
+     + URL 한 줄. 그 외 생략.
    - 재현성 점수 / 엄밀성 점수 (구성요소 별 짧은 메모)
    - **다음 단계**: open_questions 중 가장 중요한 3개를 리스트로 (없으면 "확인 완료"라고)
 

@@ -22,8 +22,9 @@
   ],
   "properties": {
     "schema_version": {
-      "const": "1.0.0",
-      "description": "Bump on breaking changes. Consumers (e.g. PostgreSQL upserter) gate on this."
+      "type": "string",
+      "enum": ["1.0.0", "1.1.0"],
+      "description": "Bump on breaking changes. Consumers (e.g. PostgreSQL upserter) gate on this. 1.1.0 adds platform.framework values {mgl, psychojs, psychojs-builder, psychojs-handwritten, external}, platform.runtimes[], platform.variant, platform.external_host, and root adaptive_procedure (all additive, all optional — 1.0.0 specs validate as 1.1.0)."
     },
 
     "identity": {
@@ -83,14 +84,47 @@
           "enum": [
             "psychtoolbox",
             "psychopy",
+            "psychojs",
+            "psychojs-builder",
+            "psychojs-handwritten",
+            "mgl",
             "jspsych",
             "lab.js",
             "opensesame",
             "neurobs-presentation",
+            "external",
             "custom",
             "mixed",
             "unknown"
-          ]
+          ],
+          "description": "1.1.0 added: 'mgl' (Justin Gardner's MATLAB OpenGL framework — distinct from PTB), 'psychojs' / 'psychojs-builder' (auto-generated 4-file fingerprint) / 'psychojs-handwritten' (PsychoJS without the .psyexp triplet), 'external' (data-only workspace; runner hosted elsewhere — Pavlovia / OSF / paper-companion GitHub). Use platform.variant for sub-mode (e.g. mgl-callback / mgl-primitive / mgl-hybrid)."
+        },
+        "variant": {
+          "type": ["string", "null"],
+          "maxLength": 100,
+          "description": "Framework sub-variant when relevant (e.g. 'mgl-callback', 'mgl-primitive', 'mgl-hybrid', 'snow-dots', 'BrainardLabToolbox', 'vistadisp', 'pelli-many-runners')."
+        },
+        "runtimes": {
+          "type": "array",
+          "maxItems": 5,
+          "description": "When one source produces multiple runtimes (e.g. a PsychoPy Builder project emits .py for desktop AND .js for web), list each runtime tag. Empty for single-runtime projects.",
+          "items": {
+            "type": "string",
+            "enum": ["python-desktop", "javascript-web", "matlab-desktop", "matlab-fmri", "r-desktop", "other"]
+          }
+        },
+        "external_host": {
+          "type": ["object", "null"],
+          "description": "Only when framework='external'. Records the upstream host where the runner actually lives.",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": ["pavlovia", "gorilla", "qualtrics", "osf", "github-elsewhere", "lab-private", "jspsych-shop", "other", "unknown"]
+            },
+            "url": { "type": ["string", "null"], "maxLength": 500 },
+            "evidence": { "type": ["string", "null"], "maxLength": 500 }
+          },
+          "additionalProperties": false
         },
         "language": {
           "type": "string",
@@ -565,6 +599,69 @@
             "notes": { "type": ["string", "null"], "maxLength": 2000 }
           },
           "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "adaptive_procedure": {
+      "type": ["object", "null"],
+      "description": "When the trial loop computes the next stimulus level from past responses (staircase / Quest / QUEST+ / PSI / Bayesian adaptive), describe the procedure here. null when the experiment uses no adaptive procedure. Added in schema_version 1.1.0; absence in a 1.0.0 spec is interpreted as null.",
+      "properties": {
+        "family": {
+          "type": "string",
+          "enum": ["staircase", "quest", "quest_plus", "psi_kontsevich_tyler", "bayesian_adaptive", "pest", "custom", "unknown"],
+          "description": "staircase = transformed up-down (Levitt 1971); quest = Watson 1983; quest_plus = Watson 2017 qpInitialize; psi_kontsevich_tyler = via Acerbi psybayes or equivalent; bayesian_adaptive = PF/grid info-gain (e.g. DG BAM); pest = Taylor & Creelman 1967; custom = describe in update_rule."
+        },
+        "engine": {
+          "type": ["string", "null"],
+          "maxLength": 200,
+          "description": "Concrete engine — e.g. 'upDownStaircase(1,2,init,step,levitt)', 'psybayes vars=[1 1 0] method=ent', 'qpInitialize psiParamsDomainList=...', 'PF MH proposal Gaussian'."
+        },
+        "update_rule": {
+          "type": ["string", "null"],
+          "maxLength": 500,
+          "description": "Verbatim from the code — e.g. '1-up-2-down Levitt halving on 2^k-1 reversals (target 70.7%)' or 'min E[H(posterior|R)] over (mu, sigma, lambda) grid'. NEVER merge similar-looking rules (Levitt ≠ PEST ≠ Garcia-Perez)."
+        },
+        "rule_confidence": {
+          "type": "string",
+          "enum": ["high", "medium", "low", "unknown"],
+          "description": "high = update_rule read from explicit literal; medium = inferred from helper signature; low = selector loaded from absent config / external module — flag in open_questions."
+        },
+        "n_interleaved": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "description": "Number of parallel staircases interleaved per trial (e.g. multipleStaircase with N=3 orientations). Default null = 1 (single staircase or non-staircase)."
+        },
+        "interleaving_key": {
+          "type": ["string", "null"],
+          "maxLength": 200,
+          "description": "When n_interleaved > 1, the variable that keys which staircase is picked each trial (e.g. 'task.thistrial.orientation' or 'random pick from staircase array')."
+        },
+        "termination": {
+          "type": ["string", "null"],
+          "maxLength": 200,
+          "description": "n_trials = <N> | n_reversals = <N> | posterior_CI < <thresh> | outer_loop_budget | unknown."
+        },
+        "per_trial_state_saved": {
+          "type": "array",
+          "maxItems": 20,
+          "items": { "type": "string", "maxLength": 200 },
+          "description": "List the per-trial state names actually written to disk for replay. Staircase canonical: ['response[]', 'strength[]', 'reversals[]', 'init_params']. Quest: ['intensity[]', 'response[]', 'tGuess', 'beta']. Bayesian PF: ['Theta{i_tr}', 'chosen_stim', 'response']. Empty array = ONLY final estimate saved → reproducibility partial."
+        },
+        "warm_start": {
+          "type": "object",
+          "description": "Cross-run state persistence (Gardner Lab getLastStimfile pattern, Ma HVI cross-session posterior).",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "mechanism": { "type": ["string", "null"], "maxLength": 300 }
+          },
+          "additionalProperties": false
+        },
+        "evidence": {
+          "type": "array",
+          "maxItems": 10,
+          "items": { "type": "string", "maxLength": 500 }
         }
       },
       "additionalProperties": false

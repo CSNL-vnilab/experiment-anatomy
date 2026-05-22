@@ -137,6 +137,134 @@ identifiers if useful.
 
 ## Changelog
 
+### v0.2.0 (mgl + PsychoJS Builder + adaptive procedures + external-host)
+
+Two parallel Opus agent harnesses (5 deep-uncertainty + 5 external
+meta-search) produced 33 catalogued samples from Gardner / Acerbi /
+Stocker / Sims / Brainard / Wichmann / Wei Ji Ma / Gold / Pelli /
+Wandell. Folded into v0.2 lens improvements:
+
+- **New `mgl` lens** (`prompts/lenses/mgl.md`) — Justin Gardner's
+  MATLAB OpenGL framework. Two-mode classifier (`mgl-callback` for
+  the canonical Gardner pattern vs `mgl-primitive` for HJL Main_RingExp).
+  Encodes the callback architecture (no explicit `for iT` loop —
+  `while … updateTask … tickScreen … end`), `task.parameter` /
+  `task.randVars.uniform` / `task.randVars.calculated` factor roles
+  (the third is a RESPONSE SLOT, not a factor — common LLM
+  mistake), segment timing model with `synchToVol` for fMRI, eye-
+  tracker variants (EyeLink / ASL / 9-pt manual). Cross-run warm-
+  start via `getLastStimfile` flagged as reproducibility-affecting.
+  Adaptive subsection: `upDownStaircase(nup,ndown,init,step,rule)`
+  with Levitt vs PEST disambiguation, `multipleStaircase`
+  interleaved-N-staircase pattern, threshold reporting via
+  `computeThreshold(meanOfLastK reversals)`. Canonical-entry picker
+  excludes `taskTemplate*.m` (framework, not entries), `*~`,
+  `*.svn-base`, conflicted-copy siblings, prefers latest-dated
+  `_YYMMDD.m`.
+- **PsychoJS Builder export subsection** (`prompts/lenses/psychopy.md`
+  § 5) — auto-generated 4 000-8 000-line web runtime. Four-file
+  fingerprint (`.psyexp` + `.js` + `<name>-legacy-browsers.js` +
+  `index.html` with `[PsychoPy]` title). Scheduler / flowScheduler /
+  loopScheduler abstraction documented. Routine triple
+  (`<r>RoutineBegin`/`EachFrame`/`End`) grouped as one node. **xlsx
+  factor extraction rules**: column nunique → factor type
+  (`nunique==1` → parameter; `≤8` → categorical; `≥10` even-spaced →
+  continuous; `==row_count` string-like → stimulus catalog;
+  sparse-fill → metadata). **Config-as-conditions trick**: 1-row
+  xlsx with all-nunique==1 columns is a parameter sidecar, NOT a
+  6-factor × 1-level design. Hand-written shuffle detection
+  (`TrialHandler.importConditions` outside any
+  `new TrialHandler({})`). Prolific / Pavlovia integration patterns.
+  Auto-component telemetry vs researcher-added columns separated
+  in `saved_variables[]` (Builder emits `<r>.started`, `<r>.stopped`,
+  `<comp>.response`, `.rt`, `.duration` unconditionally —
+  inflating these into `category=response` would over-count).
+- **Adaptive-procedure subsection** in PTB lens — staircase
+  (Levitt / PEST / Garcia-Perez), Quest (Watson 1983) / QUEST+
+  (Watson 2017 `qpInitialize`), PSI (Kontsevich-Tyler via Acerbi's
+  `psybayes`), Bayesian-adaptive (PF + info-gain like DG BAM).
+  Each emits `adaptive_procedure` with family + update-rule
+  verbatim + per-trial-state-saved + termination. Reproducibility
+  award rules per family: replay requires response/strength arrays
+  (staircase), intensity/response (Quest), full posterior history
+  or per-trial particle cloud (Bayesian). Detection pitfall:
+  `method='random'` TrialHandler with adaptive-LOOKING variable
+  names is NOT adaptive; the discriminating test is "does the level
+  for trial N depend on response on trial N-1 inside the same trial
+  loop body?".
+- **External-host pattern** in PTB lens — recognizes data-only
+  workspaces where the runner is hosted on Pavlovia / OSF / a
+  paper-companion GitHub. `platform.framework = "external"`
+  sentinel; deconstruction proceeds from saved data columns +
+  paper Methods rather than from a local runner.
+- **Anatomist Pass 2** updated — framework enum now lists `mgl`
+  (callback / primitive sub-variants), `psychojs-builder` /
+  `psychojs-handwritten`, `external`. `platform.detection_confidence`
+  thresholds documented (≥4 hard signals → ≥0.9; 2-3 → 0.7-0.9;
+  ambiguous → open_question even with best guess).
+- **Factors-live-in-multiple-places rule** in anatomist Pass 4 —
+  per-framework checklist (PTB: literal / schedule.mat /
+  randperm-runtime; mgl: parameter / randVars / expBlock.*Seq;
+  PsychoPy/PsychoJS: xlsx columns / hand-written importConditions;
+  jsPsych: factorial_design / randomization.factorial). Missing
+  the schedule generator / xlsx / mseq source is the #1 way to
+  undercount factors by 50-80 %.
+- **New `db/external-samples.json`** + `db/external-samples-summary.md`
+  + `scripts/scan-external-samples.md` — the meta-search results
+  + reproducible re-run recipe. Both files carry full `_meta.provenance`
+  / `Provenance` blocks naming the orchestrator model, the 5 agent IDs,
+  the cloned `/tmp/` trees, the canonical upstream URLs, and tool-call
+  counts per agent.
+- **Schema 1.0.0 → 1.1.0** (additive, backward compatible):
+  - `platform.framework` enum extended with `mgl`, `psychojs`,
+    `psychojs-builder`, `psychojs-handwritten`, `external`.
+  - New `platform.variant` (free-form sub-mode — `mgl-callback` /
+    `mgl-primitive` / `mgl-hybrid` / `snow-dots` / `BrainardLabToolbox`).
+  - New `platform.runtimes[]` for dual-export projects
+    (`.psyexp + .py + .js` ships both `python-desktop` and
+    `javascript-web`).
+  - New `platform.external_host { kind, url, evidence }` for
+    `framework="external"` workspaces.
+  - New root `adaptive_procedure` object (family / engine /
+    update_rule / rule_confidence / n_interleaved / interleaving_key /
+    termination / per_trial_state_saved / warm_start / evidence).
+- **Codex adversarial review pass** (run after v0.2 design freeze)
+  caught 7 CRITICAL + 5 MEDIUM design issues. All 7 critical resolved
+  before this commit:
+  1. Schema enum drift (lens promised values schema didn't list) —
+     fixed by 1.1.0 enum extensions above.
+  2. mgl two-mode detector mis-handled the HJL/Main_RingExp case
+     (primitive entry + framework files in same dir) — added explicit
+     **`mgl-hybrid` mode** with call-graph-aware disambiguation.
+  3. PsychoJS Builder four-file fingerprint was necessary-but-not-
+     sufficient — added **Scheduler-graph hard-signal requirement**
+     (≥3 of `flowScheduler.add(...)` cascade, RoutineBegin boilerplate,
+     `nextEntry(snapshot)` advance pattern, started/stopped auto-
+     telemetry pairs). Hand-written PsychoJS with the four files
+     present now classifies as `psychojs-handwritten` instead.
+  4. Missing root `adaptive_procedure` block — added to schema.
+  5. Missing `platform.runtimes[]` — added.
+  6. Missing `platform.external_host` — added.
+  7. Unresolved adaptive rule (e.g. `cfg.rule` from absent config)
+     conflicted with Hard Rule 2 ("no invention") — added explicit
+     **fallback**: `update_rule=null`, `rule_confidence="low"`,
+     open_question topic=`factors`.
+
+  Medium issues resolved this commit:
+  - **Lens loading mechanism** spelled out as a Read-tool action,
+    not aspirational ("Read `${CLAUDE_PLUGIN_ROOT}/prompts/lenses/<x>.md`
+    verbatim into context BEFORE running Passes 3-7").
+  - **Adaptive reproducibility auto-credit** Pre-step added to Pass 10
+    (parallel to SCHEDULE_ACTIVE auto-credit) — full randomization
+    score when adaptive `per_trial_state_saved` is non-empty.
+  - **External-host false-positive** prevention — detection now
+    requires BOTH negative absence AND positive evidence (a
+    documented Pavlovia / Gorilla / OSF / GitHub URL in README).
+  - **`external-samples.json` key normalization** — renamed
+    `factors_inferred_from_data_header` → `factors` (with `source`
+    field), `hierarchy_data_tree` → `hierarchy_one_liner`,
+    `release_shape` → `release_shape_note` consistently.
+
 ### v0.1.1 (interview-driven hardening)
 
 Based on a real-experiment correctness review:

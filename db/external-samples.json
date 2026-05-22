@@ -1,0 +1,978 @@
+{
+  "_meta": {
+    "schema_version": "0.2.0",
+    "generated_at": "2026-05-22",
+    "purpose": "External psychophysics / perceptual-decision-making code samples to broaden the empirical base behind v0.2 lens tuning. Companion to db/csnl-conventions.json (which is CSNL-internal). Sources: GitHub public repos + OSF deposits + paper supplementaries.",
+    "harness": "Five parallel isolated general-purpose subagents (model=opus, read-only browse + WebSearch/WebFetch + shallow git clones to /tmp/). Each agent owned one lab roster (Gardner / Acerbi / Stocker / Sims / Adjacent), produced a Markdown report with structured per-sample fields, orchestrator transcribed into this JSON.",
+    "scope_note": "A 'sample' here is one experiment-running script OR one paper-companion data+model package. Framework-only repos (mgl, ToolboxToolbox, snow-dots, PsychoJS itself) are listed in reference_frameworks but not as samples.",
+    "provenance": {
+      "orchestrator": "Claude Opus 4.7 (claude-opus-4-7[1m]) running in CSNL lab Claude Code session",
+      "run_date": "2026-05-22",
+      "agent_ids": {
+        "gardner": "aa69b12c35402f313",
+        "acerbi": "a8d8b38c97c35ec63",
+        "stocker": "af3ecc12aa4454561",
+        "sims": "a1869dd313a623d78",
+        "adjacent": "ae82b969fde91b5e3"
+      },
+      "cloned_trees": {
+        "gardner": ["/tmp/gardner-mgl/", "/tmp/gardner-grustim/"],
+        "acerbi": ["/tmp/acerbi_probe/psybayes/", "/tmp/acerbi_probe/ChangeProb/", "/tmp/acerbi_probe/visvest-causinf/", "/tmp/acerbi_probe/bayescausinf-models/", "/tmp/acerbi_probe/neurobench/"],
+        "stocker": ["/tmp/stocker_probe/Self-consistent-model/", "/tmp/stocker_probe/Working-memory-model-PlosCompBio2021/", "/tmp/stocker_probe/Speed_Prior_2021/", "/tmp/stocker_probe/adapt-discr-efficient-code/"],
+        "sims": ["/tmp/sims-meta/fourinarow-replication/", "/tmp/sims-meta/ecpg/", "/tmp/sims-meta/uctdb_data.zip", "/tmp/sims-meta/Human-RL-capacity/", "/tmp/sims-meta/ResourceRationalCognition/"],
+        "adjacent": ["/tmp/lab-meta/CriticalSpacing/", "/tmp/lab-meta/Horizontal-Vertical-Illusion/", "/tmp/lab-meta/Task_SingleCP_DotsReversal/", "/tmp/lab-meta/VirtualWorldPsychophysics/", "/tmp/lab-meta/scaling-dimension/", "/tmp/lab-meta/vistadisp/"]
+      },
+      "primary_sources_used": [
+        "github.com/justingardner (org listing + grustim repo)",
+        "github.com/acerbilab (org listing)",
+        "github.com/lacerbi (org listing)",
+        "github.com/cpc-lab-stocker (org listing)",
+        "github.com/fangzefunny (Sims-lab student)",
+        "github.com/TailiaReganMalloy (Sims-lab student)",
+        "github.com/BrainardLab (org listing)",
+        "github.com/wichmann-lab (org listing)",
+        "github.com/WeiJiMaLab (org listing)",
+        "github.com/TheGoldLab (org listing)",
+        "github.com/denispelli (personal)",
+        "github.com/vistalab/vistadisp (Wandell ecosystem)",
+        "https://osf.io/uctdb/ (Sims ecpg OSF deposit)",
+        "https://osf.io/x5ckn/ (Sims 2018 Science OSF)",
+        "https://www.sas.upenn.edu/~astocker/ (lab page; no per-paper code link)",
+        "https://gru.stanford.edu/doku.php/mgl/overview (mgl docs)",
+        "https://www.adacog.com/publications + people (Sims lab)",
+        "https://pmc.ncbi.nlm.nih.gov/articles/PMC12037794/ (Fang & Sims 2025 PMC)"
+      ],
+      "tool_calls_per_agent": {
+        "gardner": 49,
+        "acerbi": 28,
+        "stocker": 28,
+        "sims": 132,
+        "adjacent": 51
+      },
+      "wall_clock_total_seconds": 735.4,
+      "notes": [
+        "All cloned trees are shallow (git clone --depth=1) and live under /tmp/ — not committed to this repo.",
+        "Per-sample evidence fields cite real file:line refs within those clones; URLs cited above are the canonical upstream sources for verification.",
+        "The Sims agent burned 132 tool calls because the Sims lab does NOT publish on its own org (simsc3 is empty) — the agent had to identify active student handles via paper citation chasing.",
+        "No data was modified at any of the cited URLs. All reads were read-only / shallow-clone-and-Read.",
+        "Replicability: re-run via scripts/scan-external-samples.md harness. Expect numbers to drift as labs publish new repos."
+      ]
+    }
+  },
+  "labs": {
+    "gardner": {
+      "name": "Justin Gardner Lab",
+      "institution": "Stanford",
+      "github_org": "https://github.com/justingardner",
+      "lab_site": "https://gru.stanford.edu",
+      "framework_canonical": "mgl",
+      "license_default": "GPL (via mgl COPYING)",
+      "release_shape": "experiment runner + data + analysis in same repo (grustim)",
+      "samples": [
+        {
+          "name": "twoPatchMotionDir",
+          "url": "https://github.com/justingardner/grustim/blob/master/twoPatchMotionDir.m",
+          "license": "GPL-via-mgl",
+          "last_activity_year": 2019,
+          "framework": "mgl-callback",
+          "entry_files": ["twoPatchMotionDir.m"],
+          "paradigm_genre": "2AFC motion direction discrimination",
+          "hierarchy_one_liner": "1 phase / 3 segments (fix 0.5s | motion 1s | resp inf) / 168 trials = 4 coherences × 7 dir-offsets × 6 sets",
+          "factors": [
+            {"name": "coherence", "levels": [0.05, 0.35, 0.65, 0.95], "role": "per-trial via stimulus.dots.conditions"},
+            {"name": "dirOffset_deg", "levels": "[-10.5:3.5:10.5]", "role": "per-trial"},
+            {"name": "whichSide", "levels": [1, 2], "role": "randVars.uniform"}
+          ],
+          "parameters": [
+            {"name": "eccentricity", "value": [6, 6], "shape": "scalar-per-side"},
+            {"name": "speed", "value": "5 deg/s"},
+            {"name": "dot_width", "value": "10 deg diameter"},
+            {"name": "contrast", "value": 0.5}
+          ],
+          "schedule_mechanism": "pre-generated condition matrix shuffled once with randperm + indexed via stimulus.trialNumber counter (hybrid; NOT task.parameter)",
+          "adaptive": null,
+          "saved_variables": "stimulus.dots.dirL/dirR/response/correctResponse arrays + full task+myscreen via endTask → ~/data/<expname>/<SID>/",
+          "conventions": [
+            "header `% by: austin kuo` + GPL-via-mgl boilerplate",
+            "condition shuffling outside `task`, indexed by stimulus.trialNumber",
+            "deprecation notice line 10 ('Use twoPatchMotionDirfMRI instead')"
+          ],
+          "evidence": "twoPatchMotionDir.m:26,29-37,53-63,82,88-93,105-147,152-172,177-220"
+        },
+        {
+          "name": "alaisburr",
+          "url": "https://github.com/justingardner/grustim/blob/master/alaisburr.m",
+          "license": "GPL-via-mgl",
+          "last_activity_year": 2022,
+          "framework": "mgl-callback",
+          "entry_files": ["alaisburr.m (1153 lines)"],
+          "paradigm_genre": "audiovisual ventriloquism / spatial localization 2IFC (Alais & Burr 2004 replication)",
+          "hierarchy_one_liner": "1 phase / 6 segments [fix .5 | stim1 .015 | ISI .5 | stim2 .015 | resp 1.5 | ITI .5] / 20 blocks × full factorial OR nStaircaseTrials=40 per staircase",
+          "factors": [
+            {"name": "width", "levels": [4, 6, 9, 12], "role": "parameter (Gaussian σ)"},
+            {"name": "posDiff", "levels": "[-15 -11 -8 -6 -4 -2 2 4 6 8 11 15] deg", "role": "parameter (constant-stim mode)"},
+            {"name": "centerWhich", "levels": [1, 2], "role": "parameter"},
+            {"name": "displacement", "levels": [-5, 0, 5], "role": "bimodal only"},
+            {"name": "SNR_backgroundNoise", "levels": "1.3 default", "role": "parameter"},
+            {"name": "sign", "levels": [1, -1], "role": "randVars.uniform (staircase mode)"}
+          ],
+          "parameters": [
+            {"name": "stimDur", "value": "15 ms"},
+            {"name": "clickDur", "value": "1.5 ms"},
+            {"name": "ISI", "value": "500 ms"},
+            {"name": "samplesPerSecond", "value": 44100},
+            {"name": "displayDistance", "value": "from mglGetScreenParams"}
+          ],
+          "schedule_mechanism": "task{1}{1}.parameter.* crossed levels + task{1}{1}.random=1; bimodal vs unimodal switch via stimulus.task",
+          "adaptive": {
+            "family": "staircase",
+            "rule": "PEST optional",
+            "warm_start": "getLastStimfile + stimulus.{visual,auditory}Staircase cell array persistence",
+            "evidence": "alaisburr.m:126-141,144-165,218-220"
+          },
+          "saved_variables": "randVars.calculated = {resp, correct, diff, rt, centerInt, displ, left}; staircase cell arrays persisted across runs",
+          "conventions": [
+            "mglEatKeys('12`') swallows accidental scanner keys",
+            "chained staircase persistence across runs",
+            "10-bit gamma via reserved-colors palette + doGammaTest mode"
+          ],
+          "evidence": "alaisburr.m:55,63,170-202,204-209,218-220,288-301,306-313"
+        },
+        {
+          "name": "cohcon",
+          "url": "https://github.com/justingardner/grustim/blob/master/cohcon.m",
+          "license": "GPL-via-mgl",
+          "last_activity_year": 2017,
+          "framework": "mgl-callback (fMRI-aware)",
+          "entry_files": ["cohcon.m (1334 lines, author: Daniel Birman)"],
+          "paradigm_genre": "attention-cued contrast & coherence change-detection on bilateral radial dot fields (psychophysics + scanner interleaved)",
+          "hierarchy_one_liner": "2 interleaved subtasks (motion vs contrast attention) blocked across runs + catch trials; pedestal × increment 2AFC",
+          "factors": [
+            {"name": "task", "levels": ["motion", "contrast"], "role": "per-run block"},
+            {"name": "pedestal.contrast", "levels": [0.325, 0.4, 0.55, 0.85], "role": "pedestal"},
+            {"name": "pedestal.coherence", "levels": [0.15, 0.3, 0.45, 0.6], "role": "pedestal"},
+            {"name": "increments.coherence", "levels": "[0, exp(-3:.33:-.6)]", "role": "staircase deltas"},
+            {"name": "increments.contrast", "levels": "[0, exp(-4:.33:-1.6)]", "role": "staircase deltas"}
+          ],
+          "parameters": [
+            {"name": "baseCon", "value": 0.25},
+            {"name": "baseCoh", "value": 0},
+            {"name": "dotsize", "value": 3},
+            {"name": "density", "value": 21},
+            {"name": "speed", "value": 6},
+            {"name": "centerOffset", "value": 2}
+          ],
+          "schedule_mechanism": "lab-built block builder (stimulus.runs.taskBuilder/taskList) pre-randomizes subtask per 'run'; persists across sessions in stimfile + staircase pools per pedestal",
+          "adaptive": {
+            "family": "staircase",
+            "rule": "4 staircases × 2 dimensions; stairInfo.nocatchP=4",
+            "warm_start": "stimulus.staircases + stimulus.runs persisted",
+            "evidence": "cohcon.m:195-235"
+          },
+          "saved_variables": "stimulus.staircases, stimulus.runs, stimulus.counter, gamma table calibration",
+          "conventions": [
+            "auto-resume via dir('~/data/cohcon/<SID>/1*mat')",
+            "reserved-color palette around gamma calibration",
+            "mglGetParam('ignoreInitialVols') for fMRI dummy-scan",
+            "scan flag picks fMRIprojFlex vs VPixx screen"
+          ],
+          "evidence": "cohcon.m:46-48,81-85,92-118,138-157,187-235,280-299"
+        },
+        {
+          "name": "afcom",
+          "url": "https://github.com/justingardner/grustim/blob/master/afcom.m",
+          "license": "GPL-via-mgl",
+          "last_activity_year": 2019,
+          "framework": "mgl-callback (scanner-aware)",
+          "entry_files": ["afcom.m (1446 lines, Birman)"],
+          "paradigm_genre": "attentional cueing (spatial vs feature) + continuous-report color/direction memory probe (4 overlapping dot patches)",
+          "hierarchy_one_liner": "pre-built 17-block scan session, 12 trials/block, three cue conditions {none, spatial, feature} × 4 targets, randperm'd",
+          "factors": [
+            {"name": "cue", "levels": ["direction(1)", "color(2)"], "role": "session-level"},
+            {"name": "trialType", "levels": ["0=nocue", "1=spatial", "2=feature"], "role": "block-encoded"},
+            {"name": "target", "levels": [1, 2, 3, 4], "role": "block-encoded"},
+            {"name": "dirs", "levels": "rand*2π × 4 patches", "role": "per-group"}
+          ],
+          "parameters": [
+            {"name": "rotSpd", "value": 90},
+            {"name": "theta_", "value": "pi/64 (color-wheel resolution)"},
+            {"name": "colorwheel.distanceLab", "value": "60 (CIE Lab radius)"}
+          ],
+          "schedule_mechanism": "handwritten block-builder producing block.groups/target/trialType + randperm(block.trials); task.parameter used minimally",
+          "adaptive": null,
+          "saved_variables": "stimulus.blocks{}, stimulus.colorwheel, stimulus.trialTypes, stimulus.curSample, stimulus.calib; replay mode via saved stimfile",
+          "conventions": [
+            "REPLAY MODE — pass replay=<filename> + initScreen('replayScreen') for offline re-rendering",
+            "mglLab2rgb / CIE Lab color wheel in-script with explicit RGB-gamut clipping",
+            "mouse= / powerwheel= input device abstraction for continuous report"
+          ],
+          "evidence": "afcom.m:76,103-125,142-149,196-256,266-308"
+        },
+        {
+          "name": "sigdetect",
+          "url": "https://github.com/justingardner/grustim/blob/master/sigdetect.m",
+          "license": "GPL-via-mgl",
+          "last_activity_year": 2012,
+          "framework": "mgl-callback",
+          "entry_files": ["sigdetect.m (1096 lines, Gardner & Yuko)"],
+          "paradigm_genre": "Signal Detection Theory yes/no detection (dots / faces / grating modality switch)",
+          "hierarchy_one_liner": "2 phases — phase 1 startDelay placeholder, phase 2 detection (3-seg) or staircase (5-seg 2IFC)",
+          "factors": [
+            {"name": "stimulusType", "levels": ["dots", "faces", "grating"], "role": "argument"},
+            {"name": "presentProb", "levels": "[0..1] default 0.5", "role": "argument"},
+            {"name": "strength", "levels": "scalar or staircase-driven", "role": "per-trial"},
+            {"name": "pedestals", "levels": "list", "role": "parameter (staircase mode)"}
+          ],
+          "parameters": [
+            {"name": "dots.type", "value": "Opticflow"},
+            {"name": "dots.rmax", "value": "myscreen.imageHeight"},
+            {"name": "grating.sf", "value": 2},
+            {"name": "grating.windowType", "value": "gabor"}
+          ],
+          "schedule_mechanism": "task{2}.parameter.pedestal (staircase) + randVars.calculated.{response,responseType,strength,whichInterval}",
+          "adaptive": {
+            "family": "quest",
+            "rule": "Quest staircase OR fixed (staircaseType=quest|fixed)",
+            "warm_start": "continueStaircase flag for cross-run persistence",
+            "evidence": "sigdetect.m:70-103,106-107"
+          },
+          "saved_variables": "per-trial response, responseType, strength, whichInterval; stimulus.runParams; ~/data/sigdetect/<subjectID>/",
+          "conventions": [
+            "stimulus-modality runtime switch with three full init paths (initDots/initGratings/initFaces)",
+            "mglInstallSound for trial sounds — auditory feedback is Gardner Lab convention",
+            "dispParams toggle hides settings from observer"
+          ],
+          "evidence": "sigdetect.m:55-67,70-103,106-107,110-145,148"
+        },
+        {
+          "name": "wmface",
+          "url": "https://github.com/justingardner/grustim/blob/master/wmface.m",
+          "license": "GPL-via-mgl",
+          "last_activity_year": 2019,
+          "framework": "mgl-callback (camera capture, Druckmann collab)",
+          "entry_files": ["wmface.m"],
+          "paradigm_genre": "delayed-match-to-sample / working memory (auditory two-tone OR visual two-Gabor; Harrison & Tong style)",
+          "hierarchy_one_liner": "stim1 → stim2 → cue → 5s delay → probe → higher/lower response",
+          "factors": [
+            {"name": "taskType", "levels": ["auditory", "visual"], "role": "argument"},
+            {"name": "orientations", "levels": [25, 115], "role": "visual mode (deg)"},
+            {"name": "stimFreq", "levels": [440, 560], "role": "auditory mode (Hz)"},
+            {"name": "constantVals", "levels": [3, 6], "role": "per-trial"}
+          ],
+          "parameters": [
+            {"name": "delayInterval", "value": "5 s"},
+            {"name": "stimLen", "value": "0.5 s audio / 0.2 s visual"},
+            {"name": "comparisonPercentRange", "value": 0.20},
+            {"name": "nComparisonFreq", "value": 301}
+          ],
+          "schedule_mechanism": "task.parameter + staircase; cue spoken 'one'/'two' (auditory) or numeral (visual)",
+          "adaptive": {"family": "staircase", "rule": "1-up/3-down (79.4%)", "evidence": "wmface.m"},
+          "conventions": [
+            "one entry file with two modality back-ends sharing trial structure (switch lower(taskType))",
+            "useCamera=1 peripheral capture via same mgl loop",
+            "soundPath=~/proj/grustim/sounds (Gardner Lab path convention)"
+          ],
+          "evidence": "wmface.m:33-46,48-109,116,119"
+        },
+        {
+          "name": "spjdg_constant",
+          "url": "https://github.com/justingardner/grustim/blob/master/spjdg_constant.m",
+          "license": "GPL-via-mgl",
+          "last_activity_year": 2020,
+          "framework": "mgl-callback",
+          "entry_files": ["spjdg_constant.m (1241 lines, Minyoung Lee)"],
+          "paradigm_genre": "spatial bisection / position judgment (visual + auditory + bimodal; high-low reliability via σ × noise contrast)",
+          "hierarchy_one_liner": "1 phase / 7 segments [fix | pre | stim1 | ISI | stim2 | resp inf | ITI] / nCond × nVisRel × nRepeat",
+          "factors": [
+            {"name": "condition", "levels": ["vision", "auditory", "noOffset", "posOffset", "negOffset"], "role": "parameter"},
+            {"name": "closeTo", "levels": [1, 2], "role": "parameter (which test stim closer to reference)"},
+            {"name": "visRel", "levels": [1, 2], "role": "randVars.uniform (high/low reliability)"},
+            {"name": "posDiff", "levels": "log-spaced offsets", "role": "randVars"}
+          ],
+          "schedule_mechanism": "pre-shuffled sequence posDiffSeq(randSeq) → randVars; routed by task.parameter.condition (constant-stim, not staircase)",
+          "adaptive": null,
+          "conventions": [
+            "modality dispatch via flag combos (visual/auditory/bimodal/visualMan/auditoryMan/easy)",
+            "mglEatKeys('12`sf-=cd') extensive key-swallow list",
+            "commented-out predecessor spjdg.m (1242 lines) kept as deliberate 'diff record'"
+          ],
+          "evidence": "spjdg_constant.m:1-11,159-200,238-240,316,493,566,731"
+        },
+        {
+          "name": "easyhard",
+          "url": "https://github.com/justingardner/grustim/blob/master/easyhard.m",
+          "license": "GPL-via-mgl",
+          "last_activity_year": 2007,
+          "framework": "mgl-callback (older API)",
+          "entry_files": ["easyhard.m (Schluppeck)"],
+          "paradigm_genre": "dual-task (Rees-style attentional load): RSVP letters/digits at fixation + 2IFC dot-motion at periphery",
+          "hierarchy_one_liner": "two parallel task structures (one per sub-task) registered with separate initTask calls + independent callbacks",
+          "factors": [
+            {"name": "sigint", "levels": [1, 2], "role": "parameter (which interval has signal)"},
+            {"name": "coherence", "levels": [1], "role": "parameter (staircase-driven)"},
+            {"name": "directions", "levels": "{[135 45],[45 135]}", "role": "paired"},
+            {"name": "nItems", "levels": [10], "role": "RSVP length"}
+          ],
+          "schedule_mechanism": "parallel task arrays task{1}{1} (RSVP) + task{2}{1..2} (motion); response routed by whichResponse priority",
+          "adaptive": {
+            "family": "staircase",
+            "rule": "1-up/3-down Levitt with threshold=0.5, stepsize=0.05",
+            "evidence": "easyhard.m:119-167"
+          },
+          "conventions": [
+            "two-task dispatch via whichResponse priority arbitration",
+            "older writeTrace API for data logging",
+            "myscreen.stencil.{dots,fixation} for explicit stencil-mask declarations"
+          ],
+          "evidence": "easyhard.m:37-46,88-107,119-167"
+        },
+        {
+          "name": "geislerSearchTask",
+          "url": "https://github.com/justingardner/grustim/blob/master/geislerSearchTask.m",
+          "license": "GPL-via-mgl",
+          "last_activity_year": 2024,
+          "framework": "mgl-callback (Justin Yi / Hangcheol Gardner; _metal variant for new mgl Metal backend)",
+          "entry_files": ["geislerSearchTask.m + geislerDetectionTask*.m family"],
+          "paradigm_genre": "Geisler-style visual search / detection (target in retinally-scaled noise)",
+          "hierarchy_one_liner": "detection (one-loc / multiple-locs) + search variants; staircase-driven contrast",
+          "factors": [
+            {"name": "target_location", "levels": "multi-loc", "role": "per-trial"},
+            {"name": "contrast", "levels": "staircase", "role": "adaptive"},
+            {"name": "noise_field", "levels": "varies", "role": "per-trial"}
+          ],
+          "schedule_mechanism": "doStaircase (Gardner Lab wrapper for mgl/utils staircases)",
+          "adaptive": {"family": "quest_or_updown", "rule": "Quest or up/down via doStaircase/initStair"},
+          "conventions": [
+            "systematic _jy / _jyhg / _metal suffix convention (student initials + backend tag)",
+            "analysis scripts colocate with stim code (geislerSearchAnalysis.m, geislerDetectionAnalysisMultipleLocs.m) — Gardner Lab does NOT split stim and analysis repos",
+            "_metal variant exists alongside OpenGL one — lab is mid-migration"
+          ]
+        },
+        {
+          "name": "gruRetinotopy",
+          "url": "https://github.com/justingardner/grustim/blob/master/gruRetinotopy.m",
+          "license": "GPL-via-mgl",
+          "last_activity_year": 2018,
+          "framework": "mgl-callback",
+          "entry_files": ["gruRetinotopy.m"],
+          "paradigm_genre": "retinotopic mapping (wedges / rings / bars / blanks) — fMRI mapping tool",
+          "hierarchy_one_liner": "cyclic stimulus (numCycles=10, stepsPerCycle=24) with optional volume-locked synchronization",
+          "factors": [
+            {"name": "stimulusType", "levels": ["wedges", "rings", "bars"], "role": "argument"},
+            {"name": "direction", "levels": [1, -1], "role": "argument"},
+            {"name": "dutyCycle", "levels": [0.25], "role": "argument"},
+            {"name": "barAngle", "levels": "[0:45:359]", "role": "per-cycle"}
+          ],
+          "schedule_mechanism": "cycle-driven, no task.parameter factorial — mgl per-frame update",
+          "adaptive": null,
+          "conventions": [
+            "eval(evalargs(...)) arg parsing (older idiom, pre-getArgs)",
+            "huge inline help block — Gardner-style usage doc",
+            "displayName parameter picks named screen from mglEditScreenParams"
+          ]
+        },
+        {
+          "name": "afmap",
+          "url": "https://github.com/justingardner/grustim/blob/master/afmap.m",
+          "license": "GPL-via-mgl",
+          "last_activity_year": 2018,
+          "framework": "mgl-callback (fMRI only)",
+          "entry_files": ["afmap.m"],
+          "paradigm_genre": "receptive-field / attention-field mapping (poisson-flashed probes + attention task)",
+          "hierarchy_one_liner": "continuous task (orientation discrimination on cued gabor) with asynchronous probe flashes",
+          "factors": [
+            {"name": "probe_size", "levels": [0.5, 1, 2], "role": "per-probe (deg)"},
+            {"name": "probe_contrast", "levels": [0.2, 0.8], "role": "per-probe"},
+            {"name": "probe_location", "levels": "2-deg grid", "role": "per-probe"},
+            {"name": "attend", "levels": ["quarterfield", "fixation"], "role": "per-block"}
+          ],
+          "schedule_mechanism": "poisson process (2.5% per TR) generates probe times in build phase; replay reconstructs from saved task",
+          "adaptive": {"family": "staircase", "rule": "staircase on attention-task gabor difficulty"},
+          "conventions": [
+            "leading-line 'warning(deprecated -- you shouldnt be using it); return' (line 35) — Gardner Lab in-script deprecation idiom",
+            "merge-conflict markers in comments left intentionally (historical artifact)",
+            "replay mode is first-class feature"
+          ],
+          "evidence": "afmap.m:35,71-91,44-65"
+        }
+      ]
+    },
+    "acerbi": {
+      "name": "Luigi Acerbi Lab (Machine and Human Intelligence)",
+      "institution": "University of Helsinki",
+      "github_orgs": ["https://github.com/acerbilab", "https://github.com/lacerbi"],
+      "framework_canonical": "inference tooling (BADS, VBMC, IBS); psybayes for adaptive engine",
+      "release_shape": "data + model + fitting; experiment runtime largely NOT released",
+      "samples": [
+        {
+          "name": "psybayes",
+          "url": "https://github.com/lacerbi/psybayes",
+          "license": "GPL-3.0",
+          "last_activity_year": 2018,
+          "framework": "MATLAB standalone (no PTB; designed to be CALLED FROM a PTB loop)",
+          "entry_files": ["psybayes.m", "psytest.m", "demos/psytest_{auditory,changeloc,orientation}.m", "demos/multipsy_orientation.m"],
+          "paradigm_genre": "Bayesian adaptive psychometric-function estimation (Kontsevich-Tyler 1999 PSI + Prins 2012/2013 lapse/marginal extensions)",
+          "hierarchy_one_liner": "flat — one function call per trial; [xnext, psy, output] = psybayes(psy, method, vars, xi, yi)",
+          "factors": [
+            {"name": "x_stimulus_value", "levels": "user-defined grid", "role": "adaptive"},
+            {"name": "psychometric_fn_family", "levels": ["Normal CDF", "Gumbel CDF", "Logistic CDF"], "role": "model variant"}
+          ],
+          "parameters": [
+            {"name": "psy.units.x", "value": "log Hz / deg / cm"},
+            {"name": "psy.range.mu", "value": "user-set"},
+            {"name": "psy.range.sigma", "value": "user-set"},
+            {"name": "psy.range.lambda", "value": "[0, 0.2] typical"},
+            {"name": "psy.priors.lambda", "value": "Beta(α,β) e.g. [1 50]"},
+            {"name": "psy.reftime", "value": "geometric-cooldown refractory radius"}
+          ],
+          "schedule_mechanism": "adaptive — minimizes E[H(posterior | response)] over user-selected vars (e.g. vars=[1 1 0] = joint μ+σ, marginal-Ψ)",
+          "adaptive": {
+            "family": "bayesian_adaptive",
+            "engine": "psi-kontsevich-tyler + Prins lapse extension",
+            "selection_criterion": "min_expected_entropy",
+            "prior_representation": "uniform_grid_3D over (μ, σ, λ)",
+            "termination": "external (user-budgeted)",
+            "per_trial_state": "psy struct (posterior over μ,σ,λ + trial history psy.data)",
+            "refractory": "psybayes.m:150-153 — geornd(1/(1+reftime)) cooldown around refradius"
+          },
+          "saved_variables": "in-memory psy struct, persisted via save(filename,'psy') between sessions",
+          "conventions": [
+            "single-function API — caller passes back previous stimulus + response, receives next",
+            "stimulus grids in physical units via psy.units.*",
+            "multi-condition demo: cell array of psy structs, one per condition, interleaved by user code"
+          ],
+          "evidence": "psybayes.m:1,150-153; psytest.m:18-32,46,55"
+        },
+        {
+          "name": "ChangeProb (Norton, Acerbi, Ma, Landy 2019)",
+          "url": "https://github.com/lacerbi/ChangeProb",
+          "license": "MIT",
+          "last_activity_year": 2019,
+          "framework": "MATLAB model+data (PTB task code NOT shipped despite paper's Methods statement)",
+          "entry_files": ["matlab/changeprob_runfit.m", "data/ChangeProb_loaddata.m", "matlab/changeprob_simulateData.m"],
+          "paradigm_genre": "category-orientation classification with changing prior; covert-criterion (keypress) and overt-criterion (mouse rotation) tasks",
+          "hierarchy_one_liner": "11 subjects × 800 trials × {covert, overt, mixed}; session params recovered from each .mat",
+          "factors": [
+            {"name": "task", "levels": ["1=overt", "2=covert", "3=mixed"], "role": "between-block"},
+            {"name": "p_true", "levels": "changes at unmarked change-points", "role": "per-block (BOCPD)"},
+            {"name": "S_ellipse_orientation", "levels": "continuous", "role": "per-trial"},
+            {"name": "sigma_ellipse", "levels": "calibration-derived", "role": "per-subject"}
+          ],
+          "schedule_mechanism": "non-adaptive at trial level; pre-randomized sequence from session file",
+          "adaptive": null,
+          "model_components": "BOCPD online inference (ChangeProb_bocpd_nll_v2.m) as OBSERVER model (not stim adaptive)",
+          "saved_variables": ".mat per subject (ChangingProbabilities_<initials>.mat) — fields: NumTrials, StdDev, EllipseNoise, TrialType, pA, MeanSignal, MeanNoise, TrueAngle, response",
+          "conventions": [
+            "3-letter subject codes (CWG, EGC, ...)",
+            "coordinate shift to zero-mean (changeprob_getSessionParameters.m:64-67)",
+            "category A=1 / B=0",
+            "Slurm cluster-batch scripts in scripts/"
+          ],
+          "release_shape_note": "paper-companion data+fitting bundle, NOT experiment runtime — confirmed zero PTB calls"
+        },
+        {
+          "name": "visvest-causinf (Acerbi, Dokka, Angelaki, Ma 2018)",
+          "url": "https://github.com/lacerbi/visvest-causinf",
+          "license": "MIT",
+          "last_activity_year": 2018,
+          "framework": "MATLAB only — task ran on custom Angelaki-lab motion platform; PTB code hardware-specific and not shipped",
+          "paradigm_genre": "visuo-vestibular heading judgment (two tasks per subject: explicit unity judgment + left/right localization)",
+          "hierarchy_one_liner": "11 subjects × 2 tasks × multiple visual-noise levels; SLURM submission",
+          "factors": [
+            {"name": "vestibular_heading_angle", "levels": "continuous", "role": "per-trial"},
+            {"name": "visual_heading_angle", "levels": "continuous", "role": "per-trial"},
+            {"name": "visual_coherence", "levels": ["low", "med", "high"], "role": "per-block"}
+          ],
+          "adaptive": null,
+          "model_components": "12-param Gaussian-prior model OR 21-param semiparametric pivot-prior model",
+          "release_shape_note": "paper-companion, no runtime"
+        },
+        {
+          "name": "bayescausinf-models (distilled fitting code, 2023)",
+          "url": "https://github.com/acerbilab/bayescausinf-models",
+          "last_activity_year": 2023,
+          "framework": "MATLAB + BADS dependency",
+          "entry_files": ["example_run.m"],
+          "paradigm_genre": "visuo-vestibular Bayesian causal inference (subset of visvest-causinf, simplified to one CSV)",
+          "model_components": "12 (Gaussian prior) or 21 (semiparametric) params; BADS optimizer with Nstarts=3",
+          "release_shape_note": "fitting demo, no experiment"
+        }
+      ]
+    },
+    "stocker": {
+      "name": "Alan Stocker Lab (Computational Perception and Cognition)",
+      "institution": "University of Pennsylvania",
+      "github_org": "https://github.com/cpc-lab-stocker",
+      "lab_site": "https://www.sas.upenn.edu/~astocker/",
+      "framework_canonical": "MATLAB model+data only; stimulus code NOT released in any of 9 public repos",
+      "release_shape": "data + model + figure-generation; no per-paper code links on lab site; no OSF presence",
+      "samples_note": "9/9 inspected repos contain ZERO stimulus-presentation code (grep Screen|PsychImaging|KbCheck|PsychDefaultSetup returns no matches). The samples below are data+model packages that document trial design implicitly — closest the lab ships to 'experiment artifacts'.",
+      "samples": [
+        {
+          "name": "Self-consistent-model (Luu & Stocker 2018, eLife)",
+          "url": "https://github.com/cpc-lab-stocker/Self-consistent-model",
+          "license": "MIT",
+          "last_activity_year": 2021,
+          "framework": "MATLAB model (no PTB)",
+          "entry_files": ["selfConsistentModel.m", "Data_experiment{1,2,3}.txt"],
+          "paradigm_genre": "orientation estimation + categorical (CW/CCW) decision (3 experiments)",
+          "factors": [
+            {"name": "stimulus_orientation", "levels": "continuous (col 1)", "role": "per-trial", "source": "inferred_from_data_header"},
+            {"name": "stimulus_noise", "levels": "3 levels (col 2; stdSensory = paramsAll(1:3))", "role": "per-block", "source": "inferred_from_data_header"},
+            {"name": "discrimination_boundary_orientation", "levels": "varies (col 3)", "role": "per-block", "source": "inferred_from_data_header"},
+            {"name": "subject_CW/CCW_judgment", "levels": [0, 1], "role": "response (col 4)", "source": "inferred_from_data_header"},
+            {"name": "subject_continuous_estimate", "levels": "continuous (col 5)", "role": "response", "source": "inferred_from_data_header"}
+          ],
+          "hierarchy_one_liner": "3 experiments × N subjects × ~3000 trials each (one .txt per experiment, subjects concatenated)",
+          "schedule_mechanism": "inferred from data, not code — Tukey-windowed conditional priors over CW/CCW suggest categorical-prior manipulation per block",
+          "saved_variables": "tab-separated .txt, 6 columns × ~9000 rows × 3 experiments",
+          "conventions": [
+            "1 file per experiment, subjects concatenated with 'Subject: N' separator row",
+            "Tukey-windowed conditional prior pthGC (selfConsistentModel.m:41-44)",
+            "flagDecisionGiven = experiment selector"
+          ],
+          "release_shape_note": "no stimulus code; data+model only"
+        },
+        {
+          "name": "Working-memory-model-PlosCompBio2021 (Luu & Stocker 2021)",
+          "url": "https://github.com/cpc-lab-stocker/Working-memory-model-PlosCompBio2021",
+          "license": "MIT",
+          "last_activity_year": 2021,
+          "framework": "MATLAB model (no PTB)",
+          "entry_files": ["all_model_code.m"],
+          "paradigm_genre": "orientation working-memory with categorical decision + delay (memory recall noise + asymmetric prior)",
+          "hierarchy_one_liner": "2 experiments × 7 subjects × {MainExperiment, TrainArray, MotorNoise, PerceptNoise} block-types per subject (data tree: Data/Data_Exp{1,2}/P{1..7}/<block>/Original1/Original-1.mat)",
+          "factors": [
+            {"name": "noise_levels", "levels": "2 (paramsAll(1:2))", "role": "per-block"},
+            {"name": "pthcw_pthccw", "levels": "asymmetric prior", "role": "per-block"},
+            {"name": "pCw", "levels": "non-uniform category prior", "role": "per-block"}
+          ],
+          "schedule_mechanism": "calibration blocks (PerceptNoise, MotorNoise) separated at folder level",
+          "release_shape_note": "deeply nested data tree; no runtime"
+        },
+        {
+          "name": "Speed_Prior_2021 (Zhang & Stocker 2022, J Neurosci)",
+          "url": "https://github.com/cpc-lab-stocker/Speed_Prior_2021",
+          "license": null,
+          "last_activity_year": 2022,
+          "framework": "MATLAB model (no PTB)",
+          "entry_files": ["comparePrior.m", "behavior/mainOpt.m", "behavior/plotPsycurves.m"],
+          "paradigm_genre": "2AFC visual-speed discrimination across 7 reference speeds × 2 reference contrasts × 6 test contrasts",
+          "factors": [
+            {"name": "reference_speed", "levels": [0.5, 1, 2, 4, 8, 12]},
+            {"name": "reference_contrast", "levels": [0.075, 0.5]},
+            {"name": "test_contrast", "levels": [0.05, 0.075, 0.1, 0.2, 0.4, 0.8]}
+          ],
+          "schedule_mechanism": "implicit factorial — all combinations encoded in .mat struct (no condition table)",
+          "saved_variables": "behavior/NN2006/SUB{1..5}.mat",
+          "release_shape_note": "data BORROWED from Stocker & Simoncelli (2006) — re-fitted with new model"
+        },
+        {
+          "name": "adapt-discr-efficient-code (Mao/Rothkopf/Stocker 2025, PLOS CB)",
+          "url": "https://github.com/cpc-lab-stocker/adapt-discr-efficient-code",
+          "license": null,
+          "last_activity_year": 2024,
+          "framework": "MATLAB model (no PTB) + 3rd-party eye-tracker .txt",
+          "paradigm_genre": "adaptation 2AFC — discrimination threshold of test orientation after adapting to oblique (45° / 22.5°) or control adaptor",
+          "factors": [
+            {"name": "adaptor_angle", "levels": ["22.5°", "45°", "control"]},
+            {"name": "test_orientation_relative_to_adaptor", "levels": "continuous"},
+            {"name": "dtheta", "levels": "continuous"}
+          ],
+          "saved_variables": "per-subject per-adaptor .mat with test, dtheta, nTot, nRight (BINOMIAL trial counts — raw trials NOT released)",
+          "release_shape_note": "aggregated already; raw trial-level data gone"
+        }
+      ]
+    },
+    "sims": {
+      "name": "Chris Sims Lab (AdaCog)",
+      "institution": "RPI",
+      "github_handle": "active code lives on student handles: fangzefunny (Zeming Fang), TailiaReganMalloy (Tyler Malloy); simsc3 is empty",
+      "lab_org": "github.rpi.edu/AdaCog (private enterprise GHE, unreachable)",
+      "framework_canonical": "MTurk forced-choice + jsPsych (inferred from CSV schema) + Python/Julia post-hoc fitting",
+      "release_shape": "data + fits + simulations + analyses ZIPs on OSF (uctdb, x5ckn); frontend NOT released",
+      "samples": [
+        {
+          "name": "fourinarow-replication/webapp (Fang self-tutorial)",
+          "url": "https://github.com/fangzefunny/fourinarow-replication",
+          "framework": "vanilla HTML5 Canvas + JS (no jsPsych), Flask AI server",
+          "entry_files": ["webapp/index.html", "webapp/game.js", "webapp/styles.css", "ai_server.py"],
+          "paradigm_genre": "4×9 board, human-vs-human / human-vs-AI, 4-in-a-row",
+          "schedule_mechanism": "free-response click on canvas",
+          "saved_variables": "client-side JSON download (gameData: board, action, rt, trial, winner, time_elapsed)",
+          "conventions": [
+            "no Prolific token handling — subject ID typed into HTML form",
+            "blockStartTime = Date.now() pattern (game.js:84)",
+            "RT logged as (moveTime - statePresTime) / 1000"
+          ],
+          "release_shape_note": "self-tutorial replication of van Opheusden et al. 2023; not published Sims-lab data"
+        },
+        {
+          "name": "ecpg (Fang & Sims 2025, Nature Communications)",
+          "url": "https://github.com/fangzefunny/ecpg",
+          "osf_mirror": "https://osf.io/uctdb/",
+          "framework": "jsPsych (inferred from CSV schema rt,stimulus,response,corAct,corKey,screen_id,trial) — frontend NOT released",
+          "paradigm_genre": "acquired-equivalence (AE) — alien stimulus → forced 2-AFC location, F/J keys",
+          "hierarchy_one_liner": "302 (Exp1) / 497 (Exp2) MTurk participants",
+          "factors": [
+            {"name": "stimulus", "levels": "alien set", "role": "per-trial"},
+            {"name": "corKey", "levels": ["f", "j"], "role": "response"}
+          ],
+          "release_shape_note": "analysis-only — frontend confirmed absent from repo (no .html/.js, only data.zip with CSV/PKL); pipeline m0_preprocess → m1_predict → m2_fit → m3_simulate → m4_analyze → m5_recover (utils/model.py)"
+        },
+        {
+          "name": "Human-RL-capacity (Fang & Sims 2021, ICCM)",
+          "url": "https://github.com/fangzefunny/Human-RL-capacity",
+          "framework": "Python fitting only; Collins & Frank 2012/2014 RL-WM data (not Sims-lab original)",
+          "paradigm_genre": "set-size 3/6 RL task, key-press responses",
+          "entry_files": ["data/collins_{12,14}_orig.csv", "run.sh", "m1_fit_model.py"],
+          "release_shape_note": "analysis-only; Sims lab does not own the experiment"
+        },
+        {
+          "name": "ResourceRationalCognition (Malloy 2022 thesis)",
+          "url": "https://github.com/TailiaReganMalloy/ResourceRationalCognition",
+          "framework": "β-VAE + utility selection (Python/PyTorch fork of YannDubs/disentangling-vae); pickled human data only",
+          "paradigm_genre": "change-detection visual WM + Niv et al. selection task + marble-color task",
+          "entry_files": ["fit_changeDetection.py", "fit_Learning.py", "fit_utilitySelection.py", "main.py"],
+          "release_shape_note": "frontend (data-collection) NOT in repo"
+        }
+      ],
+      "specialty_finding": "Despite Sims's theoretical focus on rate-distortion / continuous-report delayed-estimation, ALL 4 inspected Sims-lab artifacts use forced-choice keypress responses. The 'color wheel mouse-drag' delayed-estimation mechanism standard in Wilken/Bays literature does NOT appear in any reachable Sims-lab repo. Theory-practice mismatch is itself a finding."
+    },
+    "adjacent": {
+      "name": "Adjacent prominent psychophysics labs",
+      "labs_covered": ["Brainard (UPenn)", "Wichmann (Tübingen)", "Wei Ji Ma (NYU)", "Gold (UPenn)", "Pelli (NYU)", "Wandell/Vistalab (Stanford, bonus)"],
+      "labs_skipped": ["Heeger (NYU) — no first-party experiment org; stimulus stack is mgl framework only"],
+      "samples": [
+        {
+          "name": "VirtualWorldPsychophysics — Lightness 2-interval forced-choice",
+          "lab": "Brainard",
+          "url": "https://github.com/BrainardLab/VirtualWorldPsychophysics",
+          "license": "MIT",
+          "last_activity_year": 2023,
+          "framework": "MATLAB + Psychtoolbox + BrainardLabToolbox + ToolboxToolbox project descriptor",
+          "entry_files": ["experiment/runLightnessExperiment.m", "runAcquisitioBySubjectName.m"],
+          "paradigm_genre": "lightness discrimination 2IFC",
+          "hierarchy_one_liner": "subject → acquisition → trial; each acquisition consumes one pre-generated trialStruct",
+          "factors": [
+            {"name": "standard_surface_index", "role": "per-trial from trialStruct.mat"},
+            {"name": "comparison_surface_index", "role": "per-trial from trialStruct.mat"},
+            {"name": "comparison_on_second_interval", "role": "per-trial flag"},
+            {"name": "Y_larger", "role": "per-trial flag"},
+            {"name": "scaleFactor", "role": "per-trial"}
+          ],
+          "parameters": [
+            {"name": "ISI", "value": "0.25 s"},
+            {"name": "ITI", "value": "0.25 s"},
+            {"name": "stimDuration", "value": "0.25 s"},
+            {"name": "image_size", "value": "2.62°"},
+            {"name": "screen", "value": "59.67×33.57 cm"}
+          ],
+          "schedule_mechanism": "pre-generated trialStruct.mat (built off-line by makeTrialStructForFinalExperiment.m); akin to CSNL TimeExp2 pre-gen pattern",
+          "adaptive": null,
+          "saved_variables": "data.trialStruct + per-trial response under caseName+subjectName dir",
+          "conventions": [
+            "inputParser() key/value argument style",
+            "separate runEasyTrials warm-up call",
+            "feedback tones generated inline (sine = correct, noise = wrong)",
+            "ToolboxToolbox project descriptor"
+          ],
+          "evidence": "runLightnessExperiment.m:1-95,165,176-186,430"
+        },
+        {
+          "name": "ColorMaterial (Brainard)",
+          "lab": "Brainard",
+          "url": "https://github.com/BrainardLab/ColorMaterial",
+          "license": "MIT",
+          "last_activity_year": 2022,
+          "framework": "MATLAB + PTB + ToolboxToolbox",
+          "paradigm_genre": "4-way same/different over conjoint color × material; maximum-likelihood difference scaling",
+          "release_shape_note": "experiment + analysis colocated"
+        },
+        {
+          "name": "robustness-development (Wichmann)",
+          "lab": "Wichmann",
+          "url": "https://github.com/wichmann-lab/robustness-development",
+          "license": null,
+          "last_activity_year": 2024,
+          "framework": "PsychoPy coder (NOT Builder)",
+          "entry_files": ["code/psychophysical_experiment.py"],
+          "paradigm_genre": "16-AFC object categorization (4×4 icon grid), noisy-image identification, age-stratified",
+          "factors": [
+            {"name": "noise_condition", "levels": ["snp", "eid", "cc"]},
+            {"name": "image_set", "levels": "varies"},
+            {"name": "age_group", "levels": "varies"},
+            {"name": "difficulty", "levels": ["easy", "random"]}
+          ],
+          "schedule_mechanism": "in-script loops with per-condition CSV block-count files (blockcount_snp_2.csv etc.) — pseudo-adaptive block rotation, not trial-level adaptive",
+          "adaptive": null,
+          "saved_variables": "rawData.csv (per-trial) + supplementData.csv (demographics) + PsychoPy ExperimentHandler pickle (crash recovery)",
+          "conventions": [
+            "explicit 'do not edit raw_data' discipline",
+            "emergency-save pattern",
+            "sensitive-data segregation"
+          ],
+          "evidence": "psychophysical_experiment.py:1-2,208-216,268-375,454-541,543-651"
+        },
+        {
+          "name": "psychopy-pixx (Wichmann; framework-only flag)",
+          "lab": "Wichmann",
+          "url": "https://github.com/wichmann-lab/psychopy-pixx",
+          "license": "LGPL-3.0",
+          "framework": "PsychoPy + VPixx 14-bit luminance toolbox",
+          "release_shape_note": "framework, no experiments bundled. Signals Wichmann lab presumes ViewPixx/ResponsePixx hardware."
+        },
+        {
+          "name": "Horizontal-Vertical-Illusion (HVI) — Wei Ji Ma",
+          "lab": "Ma",
+          "url": "https://github.com/WeiJiMaLab/Horizontal-Vertical-Illusion",
+          "license": null,
+          "last_activity_year": 2020,
+          "framework": "MATLAB + Psychtoolbox + Acerbi's psybayes (PSI adaptive)",
+          "entry_files": ["Code/Experiment/HVI_experiment.m", "Code/Experiment/HVI_calibration.m", "Code/Experiment/HVI_practice_trial.m"],
+          "paradigm_genre": "2AFC length comparison; standard line + comparison line at 8 orientations",
+          "hierarchy_one_liner": "subject → session (1–5) → block (nBlocksPerSession=5) → repetition (nRepPerBlock=2) → 64-condition list (NCND=8×8 orientations)",
+          "factors": [
+            {"name": "standard_orientation", "levels": 8, "role": "within-subject"},
+            {"name": "comparison_orientation", "levels": 8, "role": "within-subject"},
+            {"name": "comparison_length", "levels": "PSI-adaptive", "role": "per-trial adaptive"}
+          ],
+          "parameters": [
+            {"name": "displayTime", "value": "0.1 s"},
+            {"name": "delayTime", "value": "1 s"},
+            {"name": "breakTime", "value": "30 s"},
+            {"name": "thinkTime", "value": "0.2 s"},
+            {"name": "lineWidth", "value": 2},
+            {"name": "secondLine", "value": "3 cm"}
+          ],
+          "schedule_mechanism": "per-subject persisted .mat carrying posterior across sessions (Experiment_condition/<INIT>/<INIT>_<n>.mat); session 1 initializes 64 PSI posteriors, sessions 2–5 reload prior session's `post` cell array",
+          "adaptive": {
+            "family": "bayesian_adaptive",
+            "engine": "psybayes (Kontsevich-Tyler 1999 PSI)",
+            "vars": "[1 0 0] (mean only)",
+            "method": "ent (entropy minimization)",
+            "param_ranges": "mu∈[2,4], sigma∈[0.05,1.5], lambda∈[0,0.2]",
+            "warm_start": "cross-session — session N reloads session N-1's posterior"
+          },
+          "saved_variables": "save(fileOfCurrentSession, 'post', 'output', '-v7.3')",
+          "conventions": [
+            "experimenter prompted for run_type (-1/0/1) and session_num (1-5)",
+            "randSeed = sum(100*clock); rng(randSeed)",
+            "subject ID auto-uppercased",
+            "session-state-on-disk pattern (cross-session reproducibility WITH warm-start adaptive)"
+          ],
+          "evidence": "HVI_experiment.m:1,21-35,39,42-50,116-127,495"
+        },
+        {
+          "name": "fourinarow (Wei Ji Ma planning task)",
+          "lab": "Ma",
+          "url": "https://github.com/WeiJiMaLab/fourinarow",
+          "license": null,
+          "last_activity_year": 2024,
+          "framework": "custom JavaScript + Jupyter notebooks (NOT jsPsych, NOT PsychoPy)",
+          "paradigm_genre": "combinatorial decision-making, human-vs-human + human-vs-AI",
+          "release_shape_note": "example of Ma-lab ONLINE task that doesn't use jsPsych — argues against assuming 'online psychophysics ⇒ jsPsych'"
+        },
+        {
+          "name": "Task_SingleCP_DotsReversal (Gold)",
+          "lab": "Gold",
+          "url": "https://github.com/TheGoldLab/Task_SingleCP_DotsReversal",
+          "license": "Apache-2.0",
+          "last_activity_year": 2022,
+          "framework": "MATLAB + snow-dots (topsTreeNodeTask* OOP scheduler) + Lab_Matlab_Control + Python trial_gen.py",
+          "entry_files": ["run_task.m", "configure_task.m", "topsTreeNodeTaskSingleCPDotsReversal.m"],
+          "paradigm_genre": "RDK direction discrimination, single change-point reversal, dual-report (direction + change-point detection)",
+          "hierarchy_one_liner": "topsTreeNode → block sequence (Tut1, Quest, Tut2, Block2, Tut3, Block3-11 = 11 blocks) → trial; iteration='sequential' enforced",
+          "factors": [
+            {"name": "motion_coherence", "levels": "set by QUEST + scaled in later blocks", "role": "adaptive"},
+            {"name": "direction", "levels": ["0°", "180°"], "role": "per-trial"},
+            {"name": "dotsDuration", "levels": ["RT", "fixed", "exponential", "indep"], "role": "per-block"},
+            {"name": "change_point_timing", "levels": "varies", "role": "per-trial"}
+          ],
+          "schedule_mechanism": "DefaultBlockSequence.csv (block_name, trial_count pairs) loaded by readDefaultBlockSequence.m; QUEST block (50 trials) feeds coherences to subsequent blocks",
+          "adaptive": {
+            "family": "quest_plus",
+            "engine": "qpInitialize / qpListMaxArg (Watson 2017 QUEST+)",
+            "params_inferred": "threshold + slope + guess + lapse jointly",
+            "save": "subjBlockStruct.QuestFit"
+          },
+          "saved_variables": "per-block subject struct + DataHash-stamped .mat; subj_metadata.json; dotsPositions optionally recorded",
+          "conventions": [
+            "location-keyed config ('pilot' | 'office' | 'short' | 'tutorial')",
+            "pluggable input device (dotsReadableHIDGamepad, ...Eyelink, ...PupilLabs, EOG, keyboard, mouse-sim) — first-class eye-tracker pluggability at framework layer",
+            "JSON config (Task_SingleCP_DotsReversal.json) for task identity + toolbox deps (ToolboxToolbox tradition)",
+            "per-machine display config XML (dots_PsychophysicsMacMini_MachineConfig.xml)"
+          ],
+          "evidence": "run_task.m:1-55, DefaultBlockSequence.csv, configure_task.m:134-183, topsTreeNodeTaskSingleCPDotsReversal.m:1-40,67,547-585,761-762"
+        },
+        {
+          "name": "Task_Audio2AFC_ChangePoint (Gold)",
+          "lab": "Gold",
+          "url": "https://github.com/TheGoldLab/Task_Audio2AFC_ChangePoint",
+          "license": "Apache-2.0",
+          "last_activity_year": 2019,
+          "framework": "MATLAB + snow-dots",
+          "entry_files": ["run_task.m", "topsTreeNodeTaskAudio2AFCCP.m"],
+          "schedule_mechanism": "BlockPairs.csv + readDefaultPairSequence.m + suggestBlock.m",
+          "release_shape_note": "confirms snow-dots pattern is lab convention, not one-off; tone WAV generated via dotsCustomPlayableTone.m"
+        },
+        {
+          "name": "CriticalSpacing (Pelli)",
+          "lab": "Pelli",
+          "url": "https://github.com/denispelli/CriticalSpacing",
+          "license": "GPL-3.0",
+          "last_activity_year": 2020,
+          "framework": "MATLAB + Psychtoolbox (pure PTB; no ToolboxToolbox, no snow-dots)",
+          "entry_files": ["runCriticalSpacing.m (boilerplate driver)", "CriticalSpacing.m (engine)", "+ ~20 other runXxx.m drivers (runAcuity, runComplexity, runCrowdingSurvey, runCrowdingForFMRI, runVernier, ...)"],
+          "paradigm_genre": "letter identification — measures either spacing (crowding) or size (acuity); flanker triplet 'radial' or 'tangential'",
+          "factors": [
+            {"name": "targetFont", "levels": ["Sloan", "Pelli", "Sans Forgetica", "Hiragino Mincho", "Kuenstler Script", "Songti TC"], "role": "argument"},
+            {"name": "eccentricityXYDeg", "levels": "varies", "role": "argument"},
+            {"name": "durationSec", "levels": "varies", "role": "argument"},
+            {"name": "flankingDirection", "levels": ["radial", "tangential"], "role": "argument"},
+            {"name": "repeatedTargets", "levels": [0, 1], "role": "flag"},
+            {"name": "fourFlankers", "levels": [0, 1], "role": "flag"}
+          ],
+          "parameters": [
+            {"name": "trialsDesired", "value": 20},
+            {"name": "practicePresentations", "value": 3},
+            {"name": "fixedSpacingOverSize", "value": 1.4},
+            {"name": "minimumTargetPix", "value": 6},
+            {"name": "viewingDistanceCm", "value": 400},
+            {"name": "easyBoost", "value": 0.3}
+          ],
+          "schedule_mechanism": "in-script — caller fills a struct array oList; CriticalSpacing interleaves conditions trial-by-trial (no external CSV/.mat); o.fractionEasyTrials injects easy trials between adaptive trials",
+          "adaptive": {
+            "family": "quest",
+            "rule": "Watson 1983 Quest (o.useQuest=1); supports measureBeta extension",
+            "params": "pThreshold, tGuess, tGuessSd, beta all overridable"
+          },
+          "saved_variables": "per-condition .mat + optional o.takeSnapshot PDF 'to illustrate your talk or paper' (explicit talk-figure feature)",
+          "conventions": [
+            "ONE-ENGINE-MANY-RUNNERS pattern (20+ runXxx.m wrappers around one CriticalSpacing engine)",
+            "BIG one-struct o config (~50 fields)",
+            "runtime question prompts for missing fields",
+            "explicit fonts directory shipped (Sloan, Pelli, Pelli Eye Chart, Retina Micro)"
+          ],
+          "evidence": "runCriticalSpacing.m:1-100,83-89,170,178"
+        },
+        {
+          "name": "vistadisp/GaborStaircase (Wandell, bonus)",
+          "lab": "Wandell",
+          "url": "https://github.com/vistalab/vistadisp/tree/master/Applications2/GaborStaircase",
+          "framework": "MATLAB + PTB + vistadisp four-struct convention (display/stimParams/stairParams/subjectParams) + generic doStaircase engine",
+          "entry_files": ["GaborStaircase.m calling GaborInitDisplay, GaborInitStimParams, GaborInitStaircaseParams, GaborInitFixParams, GaborGetSubjectParams → doStaircase(...,'GaborTrial',...)"],
+          "paradigm_genre": "gabor contrast detection",
+          "adaptive": {"family": "staircase", "rule": "Levitt-style (NOT QUEST) via doStaircase"},
+          "saved_variables": "subject-named .log text file with header datestr(now) + GaborSaveData binary",
+          "conventions": [
+            "separate Init* function per concern (display / stim / staircase / fix / subject) — MODULAR FOUR-INIT pattern",
+            "trial generator passed by string name ('GaborTrial') — pluggable trial-generator pattern"
+          ],
+          "evidence": "vistadisp/Applications2/GaborStaircase/GaborStaircase.m:1-60"
+        }
+      ]
+    }
+  },
+  "reference_frameworks": [
+    {"name": "mgl", "url": "https://github.com/justingardner/mgl", "license": "GPL", "lab": "Gardner Lab", "status": "active 2026", "note": "MATLAB OpenGL framework; Zenodo DOI 10.5281/zenodo.1299497; mid-migration to Metal backend (mgl_metal branch)"},
+    {"name": "snow-dots", "url": "https://github.com/TheGoldLab/Lab_Matlab_Control", "lab": "Gold Lab", "note": "MATLAB OOP scheduler (topsTreeNode*); separate stack from PTB and mgl"},
+    {"name": "BrainardLabToolbox", "lab": "Brainard Lab", "note": "ToolboxToolbox-managed; tbUseProject('<name>') is the real entry call"},
+    {"name": "ToolboxToolbox", "url": "https://github.com/ToolboxHub/ToolboxToolbox", "note": "MATLAB dep manager — <Repo>.json descriptors at repo root carry transitive deps"},
+    {"name": "psybayes", "url": "https://github.com/lacerbi/psybayes", "lab": "Acerbi Lab", "note": "PSI adaptive engine (callable from PTB or mgl), GPL-3.0, last updated 2018"},
+    {"name": "BADS", "url": "https://github.com/acerbilab/bads", "note": "Bayesian Adaptive Direct Search — POST-HOC optimizer, NOT an adaptive experimental procedure"},
+    {"name": "VBMC / PyVBMC", "lab": "Acerbi Lab", "note": "Variational Bayesian Monte Carlo — post-hoc inference"},
+    {"name": "vistadisp", "url": "https://github.com/vistalab/vistadisp", "lab": "Wandell ecosystem", "note": "MATLAB+PTB with four-struct display/stim/stair/subject convention"},
+    {"name": "PsychoJS", "url": "https://github.com/psychopy/psychojs", "note": "PsychoPy's web runtime; Builder exports vendored ./lib/psychojs-<ver>.js + .css"}
+  ],
+  "cross_lab_findings": {
+    "framework_distribution_external": {
+      "mgl": "11 samples (all Gardner Lab); 0 in adjacent labs",
+      "psychtoolbox_classic": "8 samples (Brainard 2, Ma 1, Gold 2, Pelli 1, Wandell 1, plus Acerbi paper companions)",
+      "psychopy_coder": "1 (Wichmann robustness-development)",
+      "psychojs_builder": "0 in this external sample (CSNL MSY is the canonical reference)",
+      "jspsych": "0 in this external sample (Sims ecpg infers it from CSV but frontend not released)",
+      "custom_js": "2 (Sims fourinarow-replication, Ma fourinarow)",
+      "external_host_only": "all Acerbi & Stocker paper companions (code not released)"
+    },
+    "schedule_pattern_distribution": {
+      "pre_generated_mat": "Brainard VirtualWorldPsychophysics (trialStruct.mat off-line built); CSNL JOP Time2Dist; HVI cross-session posterior persistence",
+      "in_script_random": "Gardner twoPatchMotionDir, sigdetect, spjdg_constant, easyhard; Wichmann (with CSV block-counts overlay)",
+      "csv_or_xlsx_conditions": "Gold (DefaultBlockSequence.csv, BlockPairs.csv); Wichmann (blockcount_*.csv); CSNL MSY/BYL (xlsx)",
+      "json_config": "Gold (Task_*.json identity + ToolboxToolbox deps)",
+      "task_parameter_factorial": "Gardner alaisburr, cohcon, sigdetect (mgl task.parameter)",
+      "pre_built_block_array": "Gardner afcom (handwritten block builder + randperm); Gardner cohcon (taskBuilder)",
+      "fully_adaptive": "Pelli CriticalSpacing (Quest only); Ma HVI (PSI only); Gold Task_SingleCP (QUEST+ for first block, scaled later)"
+    },
+    "counterbalancing_styles": {
+      "between_subject_explicit_column": "ZERO of 33 external samples; CSNL is the exception (participants.csv assigns CB order)",
+      "within_subject_nested_design": "Ma HVI (64 orientations × 2 reps × 5 blocks × 5 sessions); Pelli CriticalSpacing (struct-array interleaved); Gold (sequential CSV blocks); Wichmann (metablocks rotated)",
+      "latin_square_explicit": "ZERO observed",
+      "pseudo_random_with_constraints": "Wichmann (completion-based block rotation); Gardner cohcon (lab-built block builder)"
+    },
+    "adaptive_procedure_distribution": {
+      "staircase": "Gardner alaisburr, cohcon, sigdetect, easyhard, wmface, geislerSearchTask, afmap; Wandell GaborStaircase; CSNL HJL",
+      "quest_classic": "Pelli CriticalSpacing; Gardner sigdetect (Quest option)",
+      "quest_plus_qp": "Gold Task_SingleCP_DotsReversal (Watson 2017)",
+      "psi_kontsevich_tyler": "Ma HVI (via Acerbi's psybayes); standalone Acerbi psybayes",
+      "bayesian_adaptive_PF_info_max": "CSNL DG BAM",
+      "no_adaptive": "Brainard (constant-stim); Stocker repos (no runtime); Gardner gruRetinotopy, spjdg_constant, afcom; Sims (forced-choice, no adaptive)"
+    },
+    "saved_data_conventions": {
+      "stimfile_triple_task_myscreen_stimulus": "Gardner mgl canonical — every analysis reads only this triple under ~/data/<expname>/<SID>/<timestamp>.mat",
+      "wide_csv_per_trial": "PsychoPy (saveAsWideText); PsychoJS Builder (./data/<pid>_<expname>_<date>.csv)",
+      "binomial_aggregated_only": "Stocker adapt-discr (nTot, nRight) — raw trials NOT released; LOSSY pattern",
+      "folder_hierarchy_as_factor_table": "Stocker Working-memory (Data/Data_Exp{n}/P{m}/{MainExperiment,MotorNoise,...}/)",
+      "tab_separated_txt_with_header_dict": "Stocker Self-consistent-model (% Column N: ... preamble)",
+      "json_metadata_sidecar": "Gold (subj_metadata.json)",
+      "stmfile_with_explicit_seed_field": "CSNL HJL (expData.seedRand) — uncommon outside CSNL"
+    },
+    "cross_run_state_patterns": {
+      "warm_start_adaptive_via_lastStimfile": "Gardner alaisburr, cohcon, sigdetect (getLastStimfile + stimulus.<X>Staircase{end+1})",
+      "cross_session_posterior_via_per_subject_mat": "Ma HVI (sessions 2-5 reload session 1's posterior)",
+      "pure_per_session_independent": "CSNL TimeExp1; Brainard VirtualWorld; Pelli CriticalSpacing",
+      "implication": "Warm-start patterns mean reproducibility depends on PAST saved files, not purely on current invocation. Lens MUST flag this; treating each invocation as independent would mis-score reproducibility."
+    },
+    "release_shape_taxonomy": {
+      "experiment_runtime_plus_analysis_colocated": "Gardner Lab (grustim entire); Brainard; Gold; Pelli; Wichmann; CSNL",
+      "data_plus_model_only": "Stocker (9/9 repos); Acerbi paper companions",
+      "adaptive_engine_only_callable_from_harness": "psybayes (Acerbi)",
+      "framework_only": "mgl, snow-dots, BrainardLabToolbox, psychopy-pixx",
+      "frontend_not_released": "Sims (ecpg, Human-RL-capacity, ResourceRationalCognition)",
+      "implication": "External-host / frontend-not-released is a recognizable release shape across labs. Lens MUST handle this (see PTB lens § External-host pattern) and not penalize as 'incomplete'."
+    },
+    "key_observations_for_lens_tuning_v0_2": [
+      "ONE-ENGINE-MANY-RUNNERS pattern (Pelli CriticalSpacing, Brainard) — when a repo has <Name>.m + 10+ run<Variant>.m wrappers, each run*.m is a separate experiment variant.",
+      "BIG one-struct config pattern (o.* / params.* / settings struct) — every lab has this; emit as parameters[] block.",
+      "JSON/CSV-driven block sequence (Gold) — DefaultBlockSequence.csv adjacent to run_task.m means external schedule (CSV).",
+      "ToolboxToolbox descriptor (<RepoName>.json at repo root with 'type':'git'/'include') — the REAL entry call is tbUseProject('<name>') BEFORE run_task.m.",
+      "snow-dots OOP scheduler (Gold) — classdef topsTreeNodeTask* + topNode.run() + dotsReadable* input plugins. Distinct from PTB and mgl.",
+      "Adaptive procedure pluggability: distinguish QUEST (Watson 1983), QUEST+ (qpInitialize), PSI (Kontsevich-Tyler / psybayes), generic up-down staircase (doStaircase), Bayesian info-max (DG BAM). Each has a different file signature.",
+      "Eye-tracker pluggability: 'readables' cell-list or input-device array → surface as hardware_inputs field. Gold's enumeration (Eyelink/PupilLabs/EOG/Gamepad/Keyboard/Mouse-sim) is canonical.",
+      "Cross-session state persisted as .mat (HVI) — <INIT>_<sess>.mat in per-subject folder holds POSTERIOR across sessions, not just data. Distinguish 'raw-data save' from 'state-carry save'.",
+      "License heterogeneity (MIT / Apache-2.0 / GPL-3.0 / LGPL-3.0 / NONE) — warn on license=null samples for reuse risk.",
+      "Framework-only repos (mgl, snow-dots, BrainardLabToolbox, psychopy-pixx) — filter on 'has at least one entry script that calls Screen/visual.Window/mglOpen', not just on lab affiliation.",
+      "Subject-id conventions: 3-letter codes (CWG), zero-padded numerics (10_), uppercase (HVI subject IDs), per-subject folder. Multiple styles — recognize all.",
+      "Replay mode (Gardner afcom, afmap) — first-class feature for offline re-rendering. Tag scripts with replay=arg parsing.",
+      "Two-stage seed (CSNL HJL: rand draws seed → seed pinned downstream) vs. one-stage (rng(seed_literal)) vs. unseeded fallback (PsychoJS Math.random) — three distinct reproducibility surfaces.",
+      "CSNL between-subject CB via participants.csv is RARE in adjacent labs; lens should still detect it but not penalize absence.",
+      "Sims's 'continuous-report color-wheel delayed-estimation' is NOT in any released code despite theory focus — don't pattern-match on theory keywords for code-level detection.",
+      "Stocker's release shape (data+model, no stimulus code, MIT/none) is a valid 'paper-companion' class — lens must not score it as 'incomplete experiment'."
+    ]
+  },
+  "harness_design": {
+    "team_composition": "5 parallel general-purpose subagents (model=opus), one per lab roster (Gardner / Acerbi / Stocker / Sims / Adjacent). Each independent context, ~5-12 min wall-clock.",
+    "tools_per_agent": "WebSearch, WebFetch, Bash (read-only + git clone into /tmp/), Read, Grep, Glob",
+    "scope_per_agent": "one lab; ≥3-12 samples; for each sample: shallow clone, read entry + README, characterize per structured fields, cite source+file:line",
+    "orchestrator_collation": "transcribe per-sample blocks into this JSON; aggregate cross-lab patterns into cross_lab_findings; record skipped labs + reasons",
+    "wall_clock": "~8-12 min for 5 parallel agents",
+    "rerun_cadence": "annual or when new prominent labs publish open-source experiment code; not coupled to CSNL roster changes",
+    "what_NOT_to_do": [
+      "don't dispatch one agent across all labs at once (context pollution)",
+      "don't classify framework-only repos (mgl, BrainardLabToolbox) as experiment samples",
+      "don't classify data+model packages as 'incomplete experiments' — they are a valid release shape",
+      "don't double-count borrowed datasets (Stocker Speed_Prior 2022 reuses NN2006 SUB1-5)",
+      "don't conflate cosmic-name homonyms (Princeton economist Christopher A. Sims ≠ RPI cognitive scientist Chris R. Sims)"
+    ]
+  }
+}
