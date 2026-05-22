@@ -1,0 +1,392 @@
+{
+  "schema_version": "1.0.0",
+  "scanned_at": "2026-05-22",
+  "root": "/Volumes/CSNL_new-1/Memory/",
+  "method": {
+    "harness": "10 isolated Explore subagents, one per researcher initial, dispatched in parallel (single Claude Code message).",
+    "criteria": {
+      "include": "stimulus presentation calls (Screen.OpenWindow/Draw*/Flip, visual.Window/win.flip, initJsPsych/timeline, lab.js Sequence, mgl mglOpen/mglFlush) AND a trial loop AND response capture (KbCheck/PsychHID/event.waitKeys/jsPsych.data)",
+      "exclude": "analysis (analyze_*, proc_*, plot_*, fig_*, extract_*, qc_*); NIfTI/SPM/FSL/AFNI/fMRIPrep/BIDS/mrtools; EyeLink .edf parsing without live experiment; pandas/numpy data manipulation without stim; matplotlib/seaborn plotting scripts; lme4/statsmodels/brms; *_backup_<date>/, archive/, Old_*/, legacy/, deprecated/, *.asv"
+    },
+    "caps_per_agent": { "depth": 6, "files_scanned": 500, "candidates_per_researcher": 10, "excluded_per_researcher": 15 }
+  },
+
+  "researchers": {
+
+    "BYL": {
+      "primary_paradigm": "orientation discrimination / estimation (Gabor-based, multi-monitor + online)",
+      "candidates": [
+        { "name": "260114_MainExp_3durations_newMonitor", "rel_path": "biasVar/Code/Experiment/260114_MainExp_3durations_newMonitor/", "framework": "psychtoolbox", "entry": ["mainExp_260114.m", "mainExp_260204.m"], "schedule": "in-script factorial 24×3×2×4=576/rep + per-session randperm shuffle (no .mat schedule)", "evidence": "mainExp_260114.m:154-159 (counts), :214 (shuffledOrder=randperm)" },
+        { "name": "260330_after Online_main_durseconds_v2_768trials", "rel_path": "biasVar/Code/Experiment/260330_afterOnline_new2durations_newMonitor/main_durseconds_v2_768trials/", "framework": "psychopy", "entry": ["main_durseconds_v2_768trials_lastrun.py"], "schedule": "PsychoPy Builder + shuffleWithConstraints in-code, no external schedule .mat", "evidence": "...lastrun.py:514 shuffleWithConstraints; :4926 trial_loop" },
+        { "name": "OnlineProject/1stBatch/durSec_Project", "rel_path": "biasVar/Code/Experiment/OnlineProject/1stBatch/durSec_Project/", "framework": "psychopy+jspsych dual-export", "entry": ["main_online_calibwithcard_durseconds.py", "main_online_calibwithcard_durseconds.js"], "schedule": "trial_conditions.xlsx (24×3×2×4=576) loaded as resource; Scheduler/flowScheduler/loopScheduler abstraction", "evidence": ".js:67-70 Scheduler ctor; generateTrialConditions_durseconds.py product()" },
+        { "name": "260113_MainExp_5conds_newMonitor", "rel_path": "biasVar/Code/Experiment/260113_MainExp_5conds_newMonitor/expcode/", "framework": "psychtoolbox", "entry": ["mainExp_260106.m"], "schedule": "same as 260114 (in-script factorial); superseded", "evidence": "dir mirrors 260114; mtime 2026-01-06" },
+        { "name": "260209_Main", "rel_path": "biasVar/Code/Experiment/260209_Main/expcodes/", "framework": "psychtoolbox", "entry": ["mainExp_260209.m", "mainExp_260212.m"], "schedule": "in-script", "evidence": "expcodes/ holds DrawGabor/getEstimationResponse + setupRotationKeys.m" },
+        { "name": "OnlineProject/2ndBatch/durSec_Project_v2", "rel_path": "biasVar/Code/Experiment/OnlineProject/2ndBatch/durSec_Project_v2/", "framework": "psychopy+jspsych", "entry": ["main_online_calibwithcard_durseconds_v2.py", "_v2.js"], "schedule": "shared generateTrialConditions.py", "evidence": "_v2 suffix; cohort 2" }
+      ],
+      "excluded": [
+        { "path": "biasVar/Code/Analysis/intrinsicmanifold/", "reason": "analysis-postproc", "note": "RSA_MDS_*, dPCA_*, manifold representational geometry" },
+        { "path": "biasVar/Data/MATLAB_2AFC_Data/", "reason": "legacy", "note": "old 2AFC dataset folder" },
+        { "path": "biasVar/Code/Experiment/250723_expcode_oldmonitor_summerpilot/", "reason": "legacy", "note": "_oldmonitor pilot, superseded" }
+      ],
+      "conventions": [
+        "Dated versioning per session: mainExp_YYMMDD.m + helper clones (DrawGabor_YYMMDD.m, getEstimationResponse_YYMMDD.m) — code-frozen-per-data-collection without git",
+        "In-script factorial schedule (no make_schedule.m) for PTB lab line; ONLINE line uses trial_conditions.xlsx loaded at runtime",
+        "PsychoPy Builder dual-export workflow: .py + .js + .psyexp triplet for web/desktop portability",
+        "Data convention: Participant_ID_YYMMDD_Seed.{csv,mat} ; eyetracking/ subdir per experiment dir",
+        "useEyeTracker boolean flag gates Eyelink init; EDF filename ID<8char>_Ses<2digit>.edf",
+        "Per-session clock-based seed (mainExp_260114.m:212 random seed logged) — reproducible PER session, not globally"
+      ],
+      "open_questions": [
+        "Which mainExp_YYMMDD.m is the canonical entry point per cohort? (multiple coexist)",
+        "How is trial_conditions.xlsx loaded at runtime in the .js export?",
+        "Are 260113 / 260209 / 260218 separate cohorts or incremental debug sessions?"
+      ]
+    },
+
+    "BHL": {
+      "primary_paradigm": "distractor effect / orientation+size memory (2-stage: discrimination → estimation)",
+      "candidates": [
+        { "name": "d2e_v1_3stims", "rel_path": "DistractorEffect/Code/d2e_v1_3stims/", "framework": "psychtoolbox", "entry": ["manystim_mod.m"], "schedule": "in-script rand matrix (nBlock=10×nTrial=30); refList=rand(...)*180; cue1List/cue2List via randperm", "evidence": "manystim_mod.m:14-15, 21, 43, 47" },
+        { "name": "d2e_v2_vertical", "rel_path": "DistractorEffect/Code/d2e_v2_vertical/", "framework": "psychtoolbox", "entry": ["d2e_v2.m"], "schedule": "in-script (12 blocks × 28 trials); condlist block-alternating; refOrilist = stimlist + ref_range", "evidence": "d2e_v2.m:41-71, 100-116, 160 grating tex" },
+        { "name": "d2e_v3_teardrop", "rel_path": "DistractorEffect/Code/d2e_v3_teardrop/", "framework": "psychtoolbox", "entry": ["d2e_v3.m"], "schedule": "in-script (10×30); 360° stim range; condlist orientation-vs-inversion", "evidence": "d2e_v3.m:96-114; 30% inversion chance line 202-203" },
+        { "name": "d2e_v4_diffFeature", "rel_path": "DistractorEffect/Code/d2e_v4_diffFeature/", "framework": "psychtoolbox", "entry": ["d2e_diffFeature.m"], "schedule": "in-script 3-condition 40:40:20 split; reflist_delta + sizelist_delta independently randomized", "evidence": "d2e_diffFeature.m:18-72; retro-cue line 188-202" }
+      ],
+      "excluded": [],
+      "conventions": [
+        "Pure PTB MATLAB; no PsychoPy/jsPsych in this researcher",
+        "Inline rand matrix per script — NO external schedule file, NO scheduleRngState capture",
+        "Versioned subdirs d2e_v<N>_<descriptor>/ per design iteration; analysis notebooks alongside (.py from Jupyter export)",
+        "Two-phase trial: discrimination (2-2.5s) → estimation (5-7s); separate data per phase",
+        "Dual output .mat + .csv (v1-v3); v4 drops .mat for CSV-only",
+        "Per-block feedback (accuracy + mean abs error) then continue prompt",
+        "Subject name + run number via input() at start; escape-key abort handled"
+      ],
+      "open_questions": [
+        "d2e_v3 references a.png teardrop texture — file not co-located",
+        "template.json has placeholder researcher initial — confirm BHL is sole author"
+      ]
+    },
+
+    "DG": {
+      "primary_paradigm": "phoneme / serial-dependence / categorical perception (Bayesian methods)",
+      "candidates": [
+        { "name": "2018_phoneme — Navigation Task (updated)", "rel_path": "2018_phoneme/Code/Exp_Codes/updated/", "framework": "psychtoolbox", "entry": ["run_NavigationTask.m"], "schedule": "generate_randomBlocks() in-script", "evidence": "run_NavigationTask.m:38-48 block loop, :60-91 trial+response" },
+        { "name": "2018_phoneme — BAM (Bayesian Adaptive Method)", "rel_path": "2018_phoneme/Code/Exp_Codes/BAM_pilot/", "framework": "psychtoolbox", "entry": ["run_BAM.m"], "schedule": "adaptive: particle filter / grid Bayesian posterior update per trial", "evidence": "run_BAM.m:37-48; task5 :53-78 init, :68-78 figure() belief plots" },
+        { "name": "2018_phoneme — Judgement (old)", "rel_path": "2018_phoneme/Code/Exp_Codes/old/", "framework": "psychtoolbox", "entry": ["run_JudgementTask.m"], "schedule": "generate_randomBlocks()", "evidence": "structure mirrors Navigation; old/ marks deprecated" }
+      ],
+      "excluded": [
+        { "path": "2018_phoneme/Code/Model_Codes/", "reason": "analysis-postproc", "note": "model fit/sim, no Screen/KbCheck" },
+        { "path": "2019_serial_dependence/Code/run_volatility_model.m", "reason": "analysis-postproc", "note": "named run_* but is post-hoc Bayesian inference using recorded stim_seq" },
+        { "path": "2023_BiasVar/Code/Analysis/", "reason": "analysis-postproc", "note": "fitting_*.py, decoding.py" }
+      ],
+      "conventions": [
+        "Entry naming: run_<TaskName>.m or run_<Method>.m",
+        "Hierarchical layout: setup/ (init_screen, configure_taskOptions) → task_funcs/ (trial-level present+response) → eyelink/ (HW interface)",
+        "Trial loop universally `for i_tr = 1:n_trial` with GetSecs() bookends; pre-allocated `report` matrix with n_reportCol",
+        "Response: KbCheck(-1) polling with deadline; multi-step responses (e.g. confidence phase) handled inline",
+        "Global Const struct via define_constants() — referenced via Const.Col_* not magic numbers",
+        "Eyelink conditional (if exp_opt.Eyelink_TurnOn) with per-block doCalibrate + per-event Eyelink('Message', ...)",
+        "PsychPortAudio wrapper play_sound(); resc resources loaded at session start"
+      ],
+      "open_questions": [
+        "Are 2018/2019/2023 separate projects or one continuum? No shared library detected.",
+        "run_volatility_model.m: actually a simulation using recorded stim, not a runner — naming is misleading"
+      ]
+    },
+
+    "JHR": {
+      "primary_paradigm": "retinotopy (phase-encoded wedge/ring) + perceptual aspect-ratio discrimination (fMRI-adjacent)",
+      "candidates": [
+        { "name": "CPS Retinotopy", "rel_path": "CPS/Code/1_ExpCode/", "framework": "psychtoolbox", "entry": ["run_CPS.m"], "schedule": "lib/CPS_loadStimParam.m hardcoded (cycleDurationSec=24, nCycle=8); 8 cycle types (CW/CCW Wedge, Exp/Contract Ring, co/ortho-axial)", "evidence": "run_CPS.m:100-109, :245 run loop, :374 cycle loop, :458-462 KbCheck, :484 Eyelink Closefile" },
+        { "name": "Psychophysics_PPS / CPS2_v2", "rel_path": "Psychophysics_PPS/", "framework": "psychtoolbox+EyeLink", "entry": ["CPS2_v2.m"], "schedule": "lib/init_trialInfo_v2.m factorial 8×2×9×5=720; 100 trials × 10 blocks; convergent-criterion practice (pCorr ≥75%)", "evidence": "CPS2_v2.m:11 nTrial/nBlock; :24-25 stimParam gen; :230 trial loop; :305-339 response; :390 -APPEND save" },
+        { "name": "CPS Resting-State Eye-Open", "rel_path": "CPS/Code/1_ExpCode/", "framework": "psychtoolbox+EyeLink", "entry": ["run_restingEyeOpen.m"], "schedule": "no stim schedule (fixation + EyeLink only)", "evidence": "run_restingEyeOpen.m:32 user input rsScanT; :220-241 EyelinkInit" }
+      ],
+      "excluded": [
+        { "path": "CPS/Data/subjData-preproc/", "reason": "analysis-postproc", "note": "RJ_*.m, MCsimulation.m fminsearch/lme4-like fitting" },
+        { "path": "OM_WB/Code/prf/", "reason": "analysis-postproc", "note": "pRF model fit (fitprf.m, eval_*.m)" },
+        { "path": "OM_WB/Code/prfnsd/", "reason": "analysis-postproc", "note": "nsAnalysis*.m, brms-style multivariate" },
+        { "path": "Psychophysics_PPS/test/", "reason": "test-only", "note": "test_gaborStim.m unit test of gabor_patch.m" }
+      ],
+      "conventions": [
+        "Session info via Type_SessInfo() + input() at script start",
+        "Init_Parameters / Init_DisplayParam / Init_StimParameters — parameter structs prefixed Init_*",
+        "Trial info as 2D matrix indexed by global COL.* (not magic numbers); stored under trialInfo.{prac,main} per phase",
+        "Incremental save via -APPEND to .mat through long sessions (CPS2_v2.m:390)",
+        "Filename: Exp<seedOrTimestamp>_<subjID><YYMMDD>_<taskName>.mat; per-run EDF separately",
+        "Trial loop nesting: outer iR (runs) → iCyc (retinotopy) OR iB (perception) → iT (trials)",
+        "Response: while loop polling KbCheck within respWin; single-press flag prevents double-log; RT = secs - flipT",
+        "Stimulus textures pre-computed in textures/ (wedge/ring .mat) — generators offline"
+      ],
+      "open_questions": [
+        "OM_WB has no run-time stim code — does it use external toolbox (NSD, vistasoft) elsewhere?",
+        "CPS2 has v, v2, v3 variants — v2 latest by mtime; confirm canonical"
+      ]
+    },
+
+    "HSL_MSY": {
+      "primary_paradigm": "joint workspace — DATA + ANALYSIS only (the actual jsPsych experiment hosted externally, e.g. Pavlovia/Prolific)",
+      "candidates": [],
+      "excluded": [
+        { "path": "Code/PreferenceSummary.py", "reason": "analysis-postproc", "note": "loads CSV outputs from a jsPsych task hosted ELSEWHERE; pearsonr/np.nanmean/plotting" },
+        { "path": "Code/*.ipynb", "reason": "analysis-postproc", "note": "Jupyter notebooks for data exploration" }
+      ],
+      "conventions": [
+        "Joint workspace (HSL + MSY collaboration) holds DATA + ANALYSIS only — no run-time code on volume",
+        "Data CSV pattern from upstream jsPsych: <PROLIFIC_ID>_main_<GRANULARITY_ORDER>_<TIMESTAMP>.csv",
+        "Granularity paradigm: slider_2.response (Likert-2) + slider_8.response (Likert-8) within-subject",
+        "Clinical batteries (PHQ9, GAD7, BDI21a, CES_D, PHQ15, Geriatric scales) collected alongside aesthetic-preference task"
+      ],
+      "open_questions": [
+        "WHERE is the jsPsych task source (slider presentation, granularity manipulation)? Confirmed not on volume.",
+        "Is the upstream task hosted on Pavlovia / Cognition.run / a private repo?"
+      ]
+    },
+
+    "JOP": {
+      "primary_paradigm": "magnitude / duration / occlusion timing (PTB, pre-generated schedule)",
+      "candidates": [
+        { "name": "Time2Dist — Duration Occlusion", "rel_path": "Time2Dist/Code/Experiment/", "framework": "psychtoolbox", "entry": ["main_duration.m"], "schedule": "PRE-GENERATED — StimGenerator_Duration_total.m + make_trial_schedule_duration.m save trial_schedule.mat; load_trial_schedule_duration.m loads at block start", "evidence": "main_duration.m:31-41 setup chain; :60 load per block; make_trial_schedule_duration.m:35-47 sc struct + rng capture (par.scheduleRngState)" },
+        { "name": "Time2Dist — old/Bhv_Mag (legacy)", "rel_path": "Time2Dist/Code/Experiment/old/2026-02-22_folder_cleanup/ExpCode/", "framework": "psychtoolbox", "entry": ["Bhv_main_Mag.m", "bhv_mag_train_pest.m"], "schedule": "PEST adaptive staircase — NO pre-gen schedule", "evidence": "Bhv_main_Mag.m:13 OpenWindow; :45 KbName keys" },
+        { "name": "tDCS_Bhv_Detect", "rel_path": "tDCS/Code/tDCS_Bhv_Detect/expCode/", "framework": "psychtoolbox+EyeLink", "entry": ["runTCSbhv_main.m"], "schedule": "NOT pre-gen; load_TCSbhv_ExpParam sets per-session params; gaze-contingent", "evidence": "runTCSbhv_main.m:24 loadDisplayInfo, :60 useEyelink, :99 PsychHID KbCheck, :43-105 trial loop" },
+        { "name": "RingRepSca — RingPitch g-matched (feature=9)", "rel_path": "RingRepSca/Code/codebackup/", "framework": "psychtoolbox+EyeLink optional", "entry": ["main_RingPitch.m"], "schedule": "NOT pre-gen — dynamic StimGenerator_RingPitch.m per trial; staircase for train phase (par.StairTrainTest==1)", "evidence": "main_RingPitch.m:33-82 iR/iT loops; :48 StimGenerator; :68 rep_sca (scaling response); :73 response_while_and_after_stimulus_RingPitch" },
+        { "name": "Time2Dist utils mainExp_v5", "rel_path": "Time2Dist/Code/Experiment/utils/", "framework": "psychtoolbox+EyeLink", "entry": ["mainExp_v5.m"], "schedule": "no pre-gen; gaze-contingent moving Gabor", "evidence": "mainExp_v5.m:25-27 gaze threshold; :68-80 dynamic gaze-mask" }
+      ],
+      "excluded": [
+        { "path": "GranRDT/Code/", "reason": "analysis-postproc", "note": "BlahutMICD, MCMC fitting; main.m reads CSV not stim" },
+        { "path": "GranNMDS/Code/Psyspace_Shepard.m", "reason": "analysis-postproc", "note": "NMDS post-hoc on preprocessed CSV" },
+        { "path": "RingRepSca/Code/BDM_Magnitude/main.m", "reason": "simulation", "note": "run_simulation saves stim_list.mat — not behavioral" },
+        { "path": "Time/Code/", "reason": "analysis-postproc", "note": "Pilot_datasorting.m only" }
+      ],
+      "conventions": [
+        "**Pre-generated schedule pattern (Time2Dist ONLY)**: StimGenerator → make_trial_schedule_*.m saves to trial_schedule.mat with rng state captured (par.scheduleRngState); main_*.m loads per block via load_trial_schedule_*.m. NOT used in RingRepSca or tDCS.",
+        "Unified `par` struct threading: param_TrialRunTime_*, param_disp_*, param_key_*, param_text_*, StimGenerator_* each accept+return par",
+        "Trial loop universal: for iR=1:nR_total, for iT=1:nT(StairTrainTest(iR)) ... — par.iR, par.iT assigned per iteration",
+        "Response heterogeneous by paradigm: Time2Dist=GetMouse with click-hold validation; tDCS=PsychHID KbCheck with gaze gate; RingRepSca=response_while_and_after_stimulus_* (modular per feature)",
+        "Naming: main_*.m / Bhv_*.m / run*_main.m entries; param_*.m setup; StimGenerator_*.m generators; Duration_*.m + response_while_*.m + block_*.m + trialTask_*.m trial logic",
+        "RingRepSca's feature axis (1=ring 2=pitch 3=motor 4=mixed 5=trial-to-trial 6=estimate 7=scaling 8=betting 9=g-matched): par.StairTrainTest gates train vs test phases per feature"
+      ],
+      "open_questions": [
+        "RingRepSca feature=9: does test phase ALSO use pre-gen schedules? Train-phase uses staircase but test-phase generator not yet traced.",
+        "tDCS load_NURF_Comp_Retent_ExpParam vs load_TCSbhv_ExpParam — which is canonical?",
+        "Magnitude: only legacy in RingRepSca (BDM_Magnitude), or also under Time2Dist? Old Bhv_Mag references /Magnitude path."
+      ]
+    },
+
+    "JSL": {
+      "primary_paradigm": "serial dependence / orientation discrimination + retro-cue (PTB) ; separately a passive-navigation fMRI analysis line (excluded)",
+      "candidates": [
+        { "name": "SerialDep_Spatial — orientation+retro-cue+eyetracker", "rel_path": "SerialDep_Spatial/Code/ExpCode_eyetracker/", "framework": "psychtoolbox+EyeLink HD", "entry": ["mainExp_v5.m"], "schedule": "in-script (nBlocks=9, nTrials=45; demo: 2×5 for ID>100); per-trial random ori/pos", "evidence": "mainExp_v5.m:6-7 counts; :127 OpenWindow; :208-481 trial loop; :411 report_orientation3 response; :485 CSV write" }
+        ],
+      "excluded": [
+        { "path": "Passive_navigation/Code/", "reason": "analysis-postproc", "note": "Basic.py (822L): nibabel/nilearn Butterworth/statsmodels/HCP-MMP1 ROI" },
+        { "path": "Passive_navigation/Code/Fig*.py", "reason": "analysis-postproc", "note": "matplotlib plot generation for paper figures" },
+        { "path": "Passive_navigation/Main/Analysis.ipynb", "reason": "analysis-postproc", "note": "Jupyter analysis" }
+      ],
+      "conventions": [
+        "Entry naming: mainExp_v<N>.m (only v5 found; earlier removed/external)",
+        "Helper categories prefixed: make_<STIMULUS>.m / report_<RESPONSE>.m / setup_<SUBSYSTEM>.m / get_<DATA>.m / determine_<PARAMETER>.m",
+        "Gparams struct centralizes display + timing constants (ppc, distance, stimDur/maskDur/delay/cueDur/ITI)",
+        "Trial timing pipeline: fixation(0.7) → stim(0.5) → mask(0.8) → delay(1.5) → cue(0.5) → response — fixed per trial",
+        "Eye-movement rejection: per-trial euclidean distance threshold; >3 consecutive failures → drift correction",
+        "Per-trial struct2table accumulated into `results` → participant-dated CSV + MAT archive",
+        "Three variants of orientation report (report_orientation.m / .2.m / .3.m) — versioned via filename, not git"
+      ],
+      "open_questions": [
+        "Where are mainExp_v1..v4? Only v5 in tree.",
+        "EDF parsing not in ExpCode_eyetracker — external?",
+        "Any PsychoPy/jsPsych branch? Currently MATLAB-only."
+      ]
+    },
+
+    "KY": {
+      "primary_paradigm": "contrast/brightness perception + pupil + auditory oddball + neurocinematics + WM orientation",
+      "candidates": [
+        { "name": "PBPC_2017", "rel_path": "PBPC_2017/Code/", "framework": "psychtoolbox+EyeLink", "entry": ["20170224/PBPCExp1.m", "20170228/PBPCExp1.m", "20170228/PBPCExp2.m"], "schedule": "config-loaded sbjSeqInfo", "evidence": "20170224/PBPCExp1.m:32 OpenWindow; :184 for iRun=1:Para.nRuns" },
+        { "name": "BPR_2020", "rel_path": "BPR_2020/Code/", "framework": "psychtoolbox", "entry": ["ExperimentCodes/PBPCExp1.m", "PBPCExp2.m", "PBPCExp3.m"], "schedule": "Para.nRuns/nTrials; flanker timing (Para.flankerDur=0.2, ITI=2.2 in Exp3)", "evidence": "PBPCExp1.m:73 OpenWindow, :184 run loop; PBPCExp3.m:224 trial loop nTrials=100" },
+        { "name": "CuBEdata", "rel_path": "CuBEdata/Code/", "framework": "psychtoolbox+EyeLink", "entry": ["runCuBEMovie.m", "runCuBEMovie_bigWindow/runCuBEMovie.m"], "schedule": "movie clips + recognition task (16 foils × 3 conditions; randperm)", "evidence": "Screen('PutImage',w,img):220; KbCheck(-1):237; EyeLink calib :225" },
+        { "name": "MJ_OriEst — WM orientation gaze-contingent", "rel_path": "MJ_OriEst/Code/Exp_Code/", "framework": "psychtoolbox+EyeLink", "entry": ["OET1_main.m"], "schedule": "8 blocks; randomization in ftn_WM_orderTrialRand.m; gaze-validated", "evidence": "OET1_main.m:300 block loop; :104 Flip; ftn_WM_BlockTask.m:56 PsychHID KbCheck; ftn_WM_TrialTask_GazeCheck.m" },
+        { "name": "AOT (Auditory Oddball + Pupil)", "rel_path": "AOT/Code/2020/", "framework": "psychtoolbox+EyeLink+audio", "entry": ["2020.09.22/PupilSoundOddballIRF_2020.m"], "schedule": "randomized sound sequence", "evidence": "Screens()::56; Resp.is1high :24" }
+      ],
+      "excluded": [
+        { "path": "JR_OriEst/Code/", "reason": "analysis-postproc", "note": "tBytAnalysis_JR.m, PupilAnls.m, pupilPreprocessing.m" },
+        { "path": "Bistable_JWL/Code/", "reason": "analysis-postproc", "note": "tBytAnalysis.m, Bistable_JWL_eyeprepro.m" },
+        { "path": "Context_General/Misc/dropbox_temp/", "reason": "legacy", "note": "dropbox backup" }
+      ],
+      "conventions": [
+        "Entry naming heterogeneous: *Exp*.m / run*.m / *_main.m as top-level runners",
+        "Trial loop sig: for iRun/iBL/iT with Screen('Flip') inside",
+        "Response: KbCheck OR PsychHID('KbCheck',RespDev.id) (the latter when EyeLink gaze gate is used)",
+        "Display via loadDisplayInfo() + Screen('OpenWindow') early; gaze/timing checkpoints in inner loop",
+        "Param structs: Para / dp / expParam; randomization via loaded seqInfo",
+        "EyeLink convention: Eyelink('Message', ...) at stimulus phase transitions",
+        "Function-prefix convention in MJ_OriEst: ftn_WM_* (functions), load_WM_* (loaders) — explicit categorization"
+      ],
+      "open_questions": [
+        "Bistable_JWL/Code has eye-preprocess but NO run-time code found — runner stored elsewhere?",
+        "Are JR_OriEst2/* converted from runner code or pure analysis-phase?",
+        "No JS files anywhere — entire KY corpus is MATLAB-only"
+      ]
+    },
+
+    "MSY": {
+      "primary_paradigm": "face/category × magnitude (gender categorization + masculinity slider) — entirely PsychoJS web-based",
+      "candidates": [
+        { "name": "cat_mag_main_ses1", "rel_path": "Code/cat_mag_main/cat_mag_main_ses1/cat_mag_main_ses1_experiment/", "framework": "psychojs", "entry": ["cat_mag_main_ses1.js", ".psyexp"], "schedule": "session_loop.xlsx → trial_general_ex.xlsx + trial_general_main.xlsx; nested session→blocks→trials", "evidence": ".js:51 flowScheduler; :1621-1627 nested loops" },
+        { "name": "cat_mag_main_ses2_3_M", "rel_path": "Code/cat_mag_main/cat_mag_main_ses2_3_M/cat_mag_main_ses2_3_M_experiment/", "framework": "psychojs", "entry": ["cat_mag_main_ses2_3_M.js", ".psyexp"], "schedule": "trial_mascul_main.xlsx (masculinity magnitude); 8-pt slider", "evidence": "same nested structure as ses1" },
+        { "name": "cat_mag_main_ses2_3_F", "rel_path": "Code/cat_mag_main/cat_mag_main_ses2_3_F/cat_mag_main_ses2_3_F_experiment/", "framework": "psychojs", "entry": [".js", ".psyexp"], "schedule": "trial_general_main.xlsx (feminine variant)", "evidence": "matches ses2_3_M structure" },
+        { "name": "cat_mag_main_ses4", "rel_path": "Code/cat_mag_main/cat_mag_main_ses4/cat_mag_main_ses4_experiment/", "framework": "psychojs", "entry": [".js", ".psyexp"], "schedule": "combined trial list via session_loop.xlsx", "evidence": "PsychoPy 2025.2.4; mtime 2025-03-23" },
+        { "name": "face_cond_ver10", "rel_path": "Code/face_cond_ver10/", "framework": "psychojs", "entry": ["face_cond_ver10.js", ".psyexp"], "schedule": "session_loop.xlsx → trial_general_main.xlsx; routineTimer.add(5.0) — 5s per trial", "evidence": ".js:3277 RoutineBegin; :3286 routineTimer; :3501 bar_e_1.rt + .response; Prolific redirect line 335" },
+        { "name": "face_cond_ver9", "rel_path": "Code/face_cond_ver9/", "framework": "psychojs", "entry": ["face_cond_ver9.js"], "schedule": "trial_general_ex/main + trial_mascul_ex/main (4 variants)", "evidence": "mtime Nov 6 2025; predecessor to ver10" }
+      ],
+      "excluded": [
+        { "path": "Code/cat_mag_main/analysis.ipynb", "reason": "analysis-postproc", "note": "pandas/scipy.stats/sklearn/statsmodels; ROC/GMM/PCA" },
+        { "path": "Code/cat_mag_main/*_stimuli/", "reason": "stimulus-prep", "note": "cropping.m / de_padding.m / luminance_contrast.m — image preprocessing" },
+        { "path": "Code/cat_mag_main/*_temp_experiment/", "reason": "staging", "note": "older mtime; superseded by *_experiment/ versions" }
+      ],
+      "conventions": [
+        "100% PsychoJS (no PTB, no jsPsych raw, no MATLAB run-time) — PsychoPy Builder export workflow",
+        "File structure: {task}_{session|version}[_{F|M}]_experiment/ ; paired .psyexp source + .js runtime + index.html + *-legacy-browsers.js",
+        "Nested loop hierarchy: Session → Blocks → Trials (3 levels); TrialHandler + Scheduler pattern",
+        "Stimulus loading: condition .xlsx as resource; images from fake_dataset/<N>.png subdirs",
+        "Response capture: slider widget .getRating() + keyboard .getKeys() → psychoJS.experiment.addData; RT logged",
+        "Prolific deployment: .setRedirectUrls('https://app.prolific.co/submissions/complete?cc=<code>') on face_cond line",
+        "Stimulus prep done in MATLAB OUTSIDE the experiment (cropping.m / luminance_contrast.m in _stimuli/)"
+      ],
+      "open_questions": [
+        "_temp_experiment/ variants: archive or active iteration? Their mtime is older than _experiment/ peers.",
+        "face_cond ver9 vs ver10: which is active? ver10 more recent (Nov 2025) but ver9 has more condition variants.",
+        "cat_mag has no routineTimer.add — is it self-paced vs face_cond's 5s fixed?",
+        "Origin of fake_dataset/ images (generated/morphed/copyright)?"
+      ]
+    },
+
+    "HJL": {
+      "primary_paradigm": "psychophysics + perceptual decision-making (mgl-based MATLAB), RNN modeling (excluded)",
+      "candidates": [
+        { "name": "Main_RingExp — perceptual decision-making (Ring stim)", "rel_path": "Main_RingExp/Code/", "framework": "matlab-mgl", "entry": ["psychExpPDM.m", "psychExpPdmCds_*.m (dated 110708..120520)", "runExpPDMpsych*.m"], "schedule": "in-script via taskTemplate*.m callbacks (initTask/updateTask); staircase via taskTemplateStaircase.m", "evidence": "psychExpPDM.m:45 mglOpen; taskTemplate.m:41 initTask; :63 updateTask; taskTemplateStaircase.m:30-33 segment+response" },
+        { "name": "Main_RingExp — task templates (dual, movie, contrast10bit, gaze-contingent, saccade)", "rel_path": "Main_RingExp/Code/taskTemplate*.m", "framework": "matlab-mgl", "entry": ["taskTemplateDualMain.m", "taskTemplateDualSubsidiary.m", "taskTemplateMovie.m", "taskTemplateContrast10bit.m", "taskTemplateGazeContingent.m", "taskTemplateSaccade.m"], "schedule": "parameterized via task.segmin/segmax/parameter", "evidence": "taskTemplate.m:19/41/55/61-66 init→loop→cleanup" },
+        { "name": "191_fMRI — psychophysics threshold estimation", "rel_path": "191_fMRI/Code/", "framework": "matlab-mgl", "entry": ["psychExp_062512.m"], "schedule": "practice → staircase thresholding → main blocks; EyeLink edf save", "evidence": "psychExp_062512.m mglOpen + staircase + KbCheck" }
+      ],
+      "excluded": [
+        { "path": "RNN_CURBD/Code/", "reason": "simulation", "note": "CURBD_example.m generates synthetic neural activity + RNN training; no live stim or subject response" },
+        { "path": "CRC_CuBE/Code/", "reason": "analysis-postproc", "note": "visualizeCuBE.m, histoPlot*.m" },
+        { "path": "BRL_fMRI/Code/", "reason": "build-infra", "note": "setuptools/ Python build infrastructure" },
+        { "path": "191_fMRI Analysis", "reason": "analysis-postproc", "note": "RLmodel_*, Compute_alpha*, RL_paramEst_*" },
+        { "path": "Main_RingExp Analysis", "reason": "analysis-postproc", "note": "RLmodel_*, analysis_*, reportSF*, plot_*" }
+      ],
+      "conventions": [
+        "**Framework: mgl** (MATLAB OpenGL wrapper) — not Psychtoolbox; mglOpen/mglFlush/mglBltTexture/mglGetKeyEvent",
+        "Callback architecture: initTask/updateTask/responseCallback pattern; taskTemplate.m + taskTemplate<Variant>.m library",
+        "Naming: psychExp_<YYMMDD>.m or psychExp<Variant>_<YYMMDD>.m for runners; getKeyResp<YYMMDD>.m for response handlers; taskTemplate<Type>.m for parameterized templates",
+        "Pre-computed stimulus textures: createStimTexture<Type>.m generates ring/grating/gaussian offline; mglCreateTexture binds before trial",
+        "Trial structure: outer while loop over phases, per-frame tickScreen()/updateTask(), within-frame mglGetKeyEvent for response",
+        "Eye-tracker calibration variants: eyeCalibASL.m (legacy), eyeCalibrationEyelink.m (current), eyeCalib9.m (9-point routine)",
+        "fMRI sync: waitForBacktick() blocks for scanner trigger",
+        "SVN-era artifacts (.svn-base files, conflicted copies) — pre-git versioning"
+      ],
+      "open_questions": [
+        "Empty Code/ dirs in RandE/ and 중견연구/ — placeholders or archived externally?",
+        "Conflicted SVN copies from multi-user development (issacrhim, vni-common-accounts, Newmans-iMac) — which is canonical?",
+        "psychExpPdmCds vs psychExpPDM — is PdmCds (2011-2012) deprecated?",
+        "BRL_fMRI 1800+ files are pure setuptools build infrastructure — actual task code stored elsewhere?"
+      ]
+    }
+  },
+
+  "cross_researcher_patterns": {
+    "framework_distribution": {
+      "psychtoolbox_matlab": ["BYL (PTB line)", "BHL", "DG", "JHR", "JOP", "JSL", "KY"],
+      "mgl_matlab": ["HJL"],
+      "psychopy_python": ["BYL (Builder)", "MSY (PsychoJS-only — runs in browser via compiled .js)"],
+      "jspsych_or_psychojs": ["BYL (dual-export)", "MSY (PsychoJS web)", "HSL_MSY (data only — task hosted externally)"]
+    },
+
+    "schedule_pattern_taxonomy": {
+      "pre_generated_mat_with_rng_state": {
+        "researchers": ["JOP (Time2Dist only)"],
+        "signature": "StimGenerator → make_*schedule*.m saves trial_schedule.mat; par.scheduleRngState = rng() captured; main_*.m loads per block via load_trial_schedule_*.m",
+        "reproducibility": "gold-standard — stranger with .mat reproduces exact sequence"
+      },
+      "in_script_rand_matrix": {
+        "researchers": ["BHL (all variants)", "BYL (PTB line)", "DG (generate_randomBlocks in-script)", "JHR (init_trialInfo factorial)"],
+        "signature": "stimList = rand(nBlock, nTrial) ... ; per-session randperm shuffle; NO external .mat schedule",
+        "reproducibility": "depends on whether the session seed is recorded — typically per-session clock seed"
+      },
+      "external_xlsx_condition_table": {
+        "researchers": ["MSY (cat_mag/face_cond — session_loop.xlsx + trial_general/mascul_main.xlsx)", "BYL (online — trial_conditions.xlsx)"],
+        "signature": "PsychoPy Builder convention; condition file loaded as resource at session start; TrialHandler iterates rows",
+        "reproducibility": "moderate — schedule deterministic via file, but RNG state not captured"
+      },
+      "adaptive_no_schedule": {
+        "researchers": ["JOP (RingRepSca train phase, tDCS)", "DG (BAM Bayesian)", "JOP (old Bhv_Mag PEST)", "HJL (Main_RingExp taskTemplateStaircase)"],
+        "signature": "staircase / Bayesian / PEST adaptive update per trial; no static schedule",
+        "reproducibility": "needs RNG state capture to reproduce — usually NOT captured"
+      }
+    },
+
+    "entry_naming_conventions": [
+      "main_<task>.m (JOP, JSL, MSY)",
+      "mainExp_<YYMMDD>.m (BYL)",
+      "mainExp_v<N>.m (JSL)",
+      "run_<TaskName>.m (DG)",
+      "run_<Project>.m (JHR — run_CPS, run_restingEyeOpen)",
+      "psychExp_<YYMMDD>.m (HJL, KY:BPR)",
+      "<Project>Exp<N>.m (KY:PBPC — PBPCExp1, PBPCExp2)",
+      "d2e_v<N>_<descriptor>.m (BHL)",
+      "{task}_ses{N}_experiment.js + .psyexp (MSY PsychoJS)",
+      "Bhv_main_<task>.m (JOP legacy)"
+    ],
+
+    "common_helper_categories": [
+      "param_*.m / Init_*.m / load_*.m — setup/parameter loading",
+      "StimGenerator_*.m / make_*.m / createStimTexture_*.m / generate_*.m — stimulus generation",
+      "response_while_*.m / getKeyResp*.m / report_*.m / get_*.m — response capture modules",
+      "ftn_WM_*.m (KY MJ_OriEst) / task_funcs/*.m (DG) / lib/init_*.m (JHR) — function-prefix categorization",
+      "trial_*.m / block_*.m / Duration_*.m / setup_*.m — trial/block logic"
+    ],
+
+    "analysis_exclusion_signatures": {
+      "neuroimaging_python": ["nibabel", "nilearn", "statsmodels.stats.multitest", "HCP-MMP1 ROI parcellation", "BIDS / fMRIPrep", "MMP_visualize", "Surf_template"],
+      "fitting_simulation_matlab": ["fminsearch", "MCsimulation.m", "RL_paramEst_*", "RLmodel_*", "CURBD_example.m (RNN sim)", "BlahutMICD", "BAM particle filter post-hoc"],
+      "eye_postproc_only": ["tBytAnalysis*.m", "PupilAnls.m", "pupilPreprocessing.m", ".edf parsing scripts without live experiment"],
+      "stimulus_prep": ["cropping.m", "luminance_contrast.m", "de_padding.m", "generateNoisePatches.py (offline)", "generateTrialConditions*.py (one-shot table builder, not runtime)"],
+      "data_exploration": ["analysis.ipynb", "Analysis.ipynb", "PreferenceSummary.py (postproc)", "tBytAnalysis_JR.m"],
+      "legacy_markers": ["*_backup_<date>/", "Old_*/", "archive/", "legacy/", "deprecated/", "*.asv", "_oldmonitor_*", "*-legacy-browsers.js", "subjData_old/", "*_temp_experiment/", ".svn-base"]
+    },
+
+    "eye_tracker_integration_patterns": {
+      "researchers_using": ["BYL (useEyeTracker flag)", "JHR (Eyelink calibration per run)", "JOP (tDCS gaze-contingent + Time2Dist optional)", "JSL (EyeLink HD with per-trial calibration)", "KY (all paradigms)", "DG (exp_opt.Eyelink_TurnOn flag)", "HJL (ASL + EyeLink + 9-point variants)", "BHL (no EyeLink visible)", "MSY (no eye-tracker — online)", "HSL_MSY (no eye-tracker — online)"],
+      "conventions": [
+        "Conditional gate via expParam.useEyeTracker / exp_opt.Eyelink_TurnOn / useEyelink",
+        "Per-trial Eyelink('Message', '<event>') at stimulus phase transitions",
+        "EDF filename pattern: <subjID_short><date_or_run>.edf (8-char limit by EyeLink)",
+        "Calibration: HJL has 9-point + ASL + EyeLink variants; JSL has drift correction after >3 fixation failures",
+        "Live gaze gating (JOP/KY MJ_OriEst): trial restart on gaze deviation; rare elsewhere"
+      ]
+    },
+
+    "key_observations_for_lens_tuning": [
+      "PTB pre-generated schedule pattern is JOP-Time2Dist-specific within CSNL — NOT lab-wide default. Confirms v0.1.1 detect-then-strict-classify policy.",
+      "make_*schedule*.m generator file existence is the strongest detection signal — only JOP has it. Other researchers' 'schedule' arrays live entirely in the runner.",
+      "External condition .xlsx (MSY, BYL online) is a SEPARATE schedule mechanism — should be detected and handled (PsychoPy condition-file convention).",
+      "Adaptive staircase / PEST / Bayesian (DG, JOP RingRepSca/tDCS legacy, HJL) means level_source='adaptive' and reproducibility hinges on whether the per-trial decision is logged.",
+      "mgl framework (HJL) is a CSNL line not covered by the v0.1.1 PTB lens. Either extend the PTB lens to subsume mgl OR add a parallel mgl.md lens (mgl uses callback architecture instead of explicit loop).",
+      "EyeLink integration is near-universal in MATLAB-based CSNL paradigms but NEVER in PsychoJS lines — useful platform-correlation signal.",
+      "Builder-exported PsychoPy/PsychoJS (MSY, BYL online) produces 4000+ line .js with auto-generated naming (slider_e_1RoutineBegin/EachFrame/End) — analyzer needs to recognize Scheduler/flowScheduler abstraction.",
+      "Versioned variant directories (260114 vs 260113 vs 260218 for BYL; d2e_v1..v4 for BHL; ses1..ses4 for MSY) — common pattern indicating iterative refinement; latest mtime is usually canonical but not always.",
+      "Dated entry filename pattern (BYL mainExp_<YYMMDD>.m, HJL psychExpPdmCds_<YYMMDD>.m, KY PupilSoundOddballIRF_<YYYY>.m) is common — used as poor-man's version control where git isn't.",
+      "HSL_MSY workspace is *data only* on this volume — the actual jsPsych task is hosted externally. Plugin must support 'data-only project, code elsewhere' as a valid spec state."
+    ]
+  },
+
+  "harness_design": {
+    "isolation": "10 Explore subagents, one per initial, dispatched in a SINGLE Claude Code message (parallel). Each agent has its own context window — does NOT see others' code or earlier conversation. Read-only Tools (Read/Grep/Glob/Bash for ls); no Edit/Write.",
+    "brief_template": "Templated per initial: root path + same include/exclude criteria + same caps (depth 6, files 500, candidates 10, excluded 15) + same output schema (## INITIAL → candidates[] / excluded[] / conventions_observed[] / open_questions[]).",
+    "aggregation": "Manual collation by the orchestrator (this script-as-conversation). Each agent's Markdown output is parsed for the four fixed sections and folded into this JSON DB.",
+    "rerun_cost": "~3-8 minutes per agent depending on tree size + read latency (SMB-mounted). Parallel dispatch fits in one wall-clock window of ~10 min for 10 researchers.",
+    "future_automation_hooks": [
+      "scripts/scan-csnl-conventions.md — written guide for re-running the harness (Claude Code session, paste prompt, dispatch, collect)",
+      "Could be wrapped in a tiny driver later — but the parallel-subagent step is inherently Claude-Code-bound; a plain script can't dispatch isolated-context agents."
+    ]
+  }
+}

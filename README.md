@@ -173,6 +173,32 @@ Based on a real-experiment correctness review:
 
 Initial release. See above sections for features.
 
+## CSNL conventions survey (`db/`)
+
+A parallel-subagent **harness** that surveys every CSNL researcher's
+`Memory/<initial>/` tree, distinguishes experiment-running code from
+analysis (eye-tracker post-proc, fMRI analysis, plotting, stats),
+and aggregates the lab's diverse coding conventions into a single
+DB. Used as input when tuning lenses for v0.2.
+
+- [`db/csnl-conventions.json`](./db/csnl-conventions.json) — full
+  per-researcher rows + cross-researcher patterns.
+- [`db/conventions-summary.md`](./db/conventions-summary.md) — human-
+  facing summary (headline counts, schedule-mechanism taxonomy,
+  per-researcher capsules, v0.2 backlog).
+- [`scripts/scan-csnl-conventions.md`](./scripts/scan-csnl-conventions.md) —
+  reproducible recipe for re-running the survey when the roster or
+  projects change.
+
+First run (2026-05-22): 10 researchers (BYL, BHL, DG, JHR, HSL_MSY,
+JOP, JSL, KY, MSY, HJL), 10 parallel isolated Explore subagents,
+~5-10 min wall-clock. Findings include: JOP is the only researcher
+with the `make_*schedule*.m` + `trial_schedule.mat` +
+`scheduleRngState` pattern (validates v0.1.1's detect-then-strict
+policy); HJL uses `mgl` not PTB (v0.2 candidate for a new lens);
+MSY is 100% PsychoJS Builder export; HSL_MSY is data-only with the
+upstream task hosted externally.
+
 ## License
 
 MIT. See [LICENSE](./LICENSE).
